@@ -1,3 +1,5 @@
+https://chatgpt.com/g/g-q0wBqO335-receipt-tracker
+
 Consistency of the implemented microservices according to the user
 stories, initial design, and planned API.
 
