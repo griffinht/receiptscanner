@@ -78,8 +78,90 @@ app.get('/', async (c) => {
           <h2>${item ? `${item} Purchases in ${category}` : `${category} Spending By Month`}</h2>
         ` : ''}
         ${ChartSection(displayData, category, item)}
+        <div class="chart-container">
+          <canvas id="trendLineChart"></canvas>
+        </div>
         ${TransactionsTable(displayData)}
         ${TransactionsModal()}
+        <script>
+          // Get all unique categories from the data
+          const categories = [...new Set(
+            Object.values(${JSON.stringify(displayData)})
+              .flatMap(monthData => Object.keys(monthData))
+          )];
+
+          // Generate random colors for each category
+          const categoryColors = categories.reduce((acc, category, index) => {
+            const hue = (index * 137.5) % 360;  // Golden angle in degrees
+            acc[category] = 'hsl(' + hue + ', 70%, 50%)';
+            return acc;
+          }, {});
+
+          // Calculate monthly totals by category
+          const monthlyData = Object.entries(${JSON.stringify(displayData)}).map(([month, data]) => {
+            const categoryTotals = {};
+            categories.forEach(category => {
+              categoryTotals[category] = data[category]?.total || 0;
+            });
+            return { month, ...categoryTotals };
+          });
+
+          // Create the line chart
+          const ctx = document.getElementById('trendLineChart').getContext('2d');
+          new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: monthlyData.map(item => item.month),
+              datasets: categories.map(category => ({
+                label: category,
+                data: monthlyData.map(item => item[category]),
+                borderColor: categoryColors[category],
+                backgroundColor: categoryColors[category].replace('hsl', 'hsla').replace(')', ', 0.5)'),
+                tension: 0.1,
+                fill: true,
+              }))
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                title: {
+                  display: true,
+                  text: 'Stacked Monthly Spending by Category'
+                },
+                legend: {
+                  position: 'bottom',
+                  labels: {
+                    padding: 20
+                  }
+                },
+                tooltip: {
+                  mode: 'index'
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  stacked: true,
+                  title: {
+                    display: true,
+                    text: 'Amount ($)'
+                  }
+                },
+                x: {
+                  title: {
+                    display: true,
+                    text: 'Month'
+                  }
+                }
+              },
+              interaction: {
+                mode: 'nearest',
+                axis: 'x',
+                intersect: false
+              }
+            }
+          });
+        </script>
       </body>
     </html>
   `;

@@ -1,20 +1,36 @@
 .chart-section {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
+  flex-wrap: nowrap;
   gap: 15px;
   justify-content: center;
   margin: 10px 0;
+  overflow-x: auto;
+  padding: 10px;
 }
 
 .chart-container {
-  background: white;
-  padding: 10px;
+  flex: 0 0 auto;
+  width: 400px;
+  min-width: 300px;
+  margin: 10px;
+  padding: 20px;
+  background-color: white;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .chart-container h3 {
   text-align: center;
   margin-bottom: 5px;
   color: #2c3e50;
+}
+
+canvas {
+  max-height: 400px;
+}
+
+.chart-container:has(#trendLineChart) {
+  width: 80%;
+  margin: 20px auto;
 } 
