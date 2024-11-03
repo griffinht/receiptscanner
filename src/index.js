@@ -14,18 +14,29 @@ app.use('*', logger())
 app.use('/*', serveStatic({ root: './static' }))
 
 app.get('/', async (c) => {
-  // Get query parameters
-  const month = c.req.query('month');
   const category = c.req.query('category');
   
-  // Filter data based on query parameters
   let displayData = mockSpendingData;
-  if (month && category) {
-    displayData = {
-      [month]: {
-        [category]: mockSpendingData[month][category]
+  if (category) {
+    // Get data for all months but only for the selected category
+    displayData = Object.entries(mockSpendingData).reduce((acc, [month, monthData]) => {
+      if (monthData[category]) {
+        // Calculate item totals for this month's category
+        const transactions = monthData[category].transactions;
+        const itemTotals = transactions.reduce((acc, t) => {
+          acc[t.item] = (acc[t.item] || 0) + t.amount;
+          return acc;
+        }, {});
+
+        acc[month] = {
+          [category]: {
+            ...monthData[category],
+            items: itemTotals
+          }
+        };
       }
-    };
+      return acc;
+    }, {});
   }
 
   const html = `
@@ -38,7 +49,10 @@ app.get('/', async (c) => {
       </head>
       <body>
         <h1>Monthly Grocery Spending Breakdown</h1>
-        ${month && category ? `<a href="/">Back to All Data</a>` : ''}
+        ${category ? `
+          <a href="/">Back to All Data</a>
+          <h2>${category} Spending By Month</h2>
+        ` : ''}
         ${ChartSection(displayData)}
         ${TransactionsTable(displayData)}
         ${TransactionsModal()}
@@ -49,6 +63,47 @@ app.get('/', async (c) => {
             '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
             '#9966FF', '#FF9F40', '#C9CBCF'
           ];
+
+          Object.entries(mockData).forEach(([month, data], index) => {
+            const ctx = document.getElementById('chart' + index);
+            const isDetailView = ${Boolean(category)};
+            
+            new Chart(ctx, {
+              type: 'pie',
+              data: {
+                labels: isDetailView ? 
+                  Object.keys(data[Object.keys(data)[0]].items) : 
+                  Object.keys(data),
+                datasets: [{
+                  data: isDetailView ? 
+                    Object.values(data[Object.keys(data)[0]].items) : 
+                    Object.values(data).map(cat => cat.total),
+                  backgroundColor: colors,
+                  hoverOffset: 4
+                }]
+              },
+              options: {
+                plugins: {
+                  tooltip: {
+                    callbacks: {
+                      label: function(context) {
+                        const label = context.label || '';
+                        const value = context.raw || 0;
+                        return label + ': $' + value.toFixed(2);
+                      }
+                    }
+                  }
+                },
+                onClick: isDetailView ? null : (event, elements) => {
+                  if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const category = Object.keys(data)[index];
+                    window.location.href = \`?category=\${category}\`;
+                  }
+                }
+              }
+            });
+          });
 
           function showTransactions(month, category) {
             const modal = document.getElementById('transactionsModal');
@@ -82,41 +137,6 @@ app.get('/', async (c) => {
               modal.style.display = 'none';
             }
           }
-
-          Object.entries(mockData).forEach(([month, data], index) => {
-            const ctx = document.getElementById('chart' + index);
-            new Chart(ctx, {
-              type: 'pie',
-              data: {
-                labels: Object.keys(data),
-                datasets: [{
-                  data: Object.values(data).map(cat => cat.total),
-                  backgroundColor: colors,
-                  hoverOffset: 4
-                }]
-              },
-              options: {
-                plugins: {
-                  tooltip: {
-                    callbacks: {
-                      label: function(context) {
-                        const label = context.label || '';
-                        const value = context.raw || 0;
-                        return label + ': $' + value.toFixed(2);
-                      }
-                    }
-                  }
-                },
-                onClick: (event, elements) => {
-                  if (elements.length > 0) {
-                    const index = elements[0].index;
-                    const category = Object.keys(data)[index];
-                    window.location.href = \`?month=\${month}&category=\${category}\`;
-                  }
-                }
-              }
-            });
-          });
         </script>
       </body>
     </html>
