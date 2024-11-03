@@ -1,13 +1,14 @@
-const { BaseHTML } = require('../templates/base');
-
 const homeRoute = async (c) => {
-  const content = `
-    <div class="container">
-      <h1>Welcome to Receipt Scanner</h1>
-      <p>Select a section above to view detailed spending analysis.</p>
-    </div>
-  `;
-  return c.html(BaseHTML('Home', content, 'home'));
+  return {
+    title: 'Home',
+    content: `
+      <div class="container">
+        <h1>Welcome to Grocery Tracker</h1>
+        <p>Track and analyze your grocery spending patterns.</p>
+        <!-- rest of your home page content -->
+      </div>
+    `
+  };
 };
 
 module.exports = { homeRoute }; 

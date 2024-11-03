@@ -1,8 +1,7 @@
 const { BaseHTML } = require('../templates/base');
-const { ChartSection } = require('../components/ChartSection');
-const { LineChartSection } = require('../components/LineChartSection');
+const { BarChart: ChartSection } = require('../components/BarChart');
+const { LineChart: LineChartSection } = require('../components/LineChart');
 const { TransactionsTable } = require('../components/TransactionsTable');
-const { TransactionsModal } = require('../components/TransactionsModal');
 const { mockSpendingData } = require('../data/mockData');
 
 const transformDataByStore = (data) => {
@@ -47,10 +46,7 @@ const transformDataByStore = (data) => {
   return storeData;
 };
 
-const storesRoute = async (c) => {
-  const store = c.req.query('store');
-  const item = c.req.query('item');
-  
+const getDisplayData = (store, item) => {
   let displayData = transformDataByStore(mockSpendingData);
   
   if (store) {
@@ -86,21 +82,30 @@ const storesRoute = async (c) => {
 
   // Debug logging
   console.log('Transformed Data:', JSON.stringify(displayData, null, 2));
+  
+  return displayData;
+};
 
-  const content = `
-    <div class="container">
-      <h1>Store Spending Analysis</h1>
-      ${store ? `
-        <a href="/stores">Back to All Stores</a>
-        <h2>${item ? `${item} Purchases at ${store}` : `${store} Spending By Month`}</h2>
-      ` : ''}
-      ${ChartSection(displayData, store, item)}
-      ${LineChartSection(displayData, store, item)}
-      ${TransactionsTable(displayData)}
-      ${TransactionsModal()}
-    </div>
-  `;
-  return c.html(BaseHTML('Stores', content, 'stores'));
+const storesRoute = async (c) => {
+  const store = c.req.query('store');
+  
+  const displayData = getDisplayData(store, mockSpendingData);
+
+  return {
+    title: 'Stores',
+    content: `
+      <div class="container">
+        <h1>Store Spending Analysis</h1>
+        ${store ? `
+          <a href="/stores">Back to Stores</a>
+          <h2>${store} Spending Details</h2>
+        ` : ''}
+        ${ChartSection(displayData, store)}
+        ${LineChartSection(displayData, store)}
+        ${TransactionsTable(displayData)}
+      </div>
+    `
+  };
 };
 
 module.exports = { storesRoute }; 

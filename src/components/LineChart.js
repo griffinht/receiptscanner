@@ -1,4 +1,4 @@
-function LineChartSection(displayData, category, item) {
+function LineChart(displayData, category, item) {
   return `
     <div class="chart-container">
       <canvas id="trendLineChart"></canvas>
@@ -9,4 +9,4 @@ function LineChartSection(displayData, category, item) {
   `;
 }
 
-module.exports = { LineChartSection }; 
+module.exports = { LineChart: LineChart }; 
