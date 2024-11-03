@@ -2,10 +2,11 @@ class PieCharts extends HTMLElement {
   constructor() {
     super();
     this.charts = null;
+    this.handleChartClick = this.handleChartClick.bind(this);
   }
 
   static get observedAttributes() {
-    return ['data', 'category'];
+    return ['data', 'category', 'item'];
   }
 
   connectedCallback() {
@@ -27,6 +28,28 @@ class PieCharts extends HTMLElement {
   disconnectedCallback() {
     if (this.charts) {
       this.charts.forEach(chart => chart.destroy());
+    }
+  }
+
+  handleChartClick(event, elements) {
+    if (!elements.length) return;
+    
+    const clickedLabel = event.chart.data.labels[elements[0].index];
+    const currentCategory = this.getAttribute('category');
+    const currentItem = this.getAttribute('item');
+    
+    // Get current URL and path
+    const url = new URL(window.location.href);
+    const path = url.pathname;
+    
+    if (!currentCategory) {
+      // If we're on the main view, clicking should filter by category/store
+      window.location.href = `${path}?${path.includes('stores') ? 'store' : 'category'}=${encodeURIComponent(clickedLabel)}`;
+    } else if (!currentItem) {
+      // If we're viewing a category/store, clicking should filter by item
+      const params = new URLSearchParams(url.search);
+      params.set('item', clickedLabel);
+      window.location.href = `${path}?${params.toString()}`;
     }
   }
 
@@ -108,7 +131,8 @@ class PieCharts extends HTMLElement {
               position: 'bottom',
               display: true
             }
-          }
+          },
+          onClick: this.handleChartClick
         }
       });
 
