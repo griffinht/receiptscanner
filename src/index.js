@@ -65,7 +65,11 @@ app.get('/', async (c) => {
       <head>
         <title>Receipt Scanner - Grocery Spending</title>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <link rel="stylesheet" href="/main.css">
+        <link rel="stylesheet" href="/css/main.css">
+        <link rel="stylesheet" href="/css/charts.css">
+        <link rel="stylesheet" href="/css/transactions.css">
+        <link rel="stylesheet" href="/css/modal.css">
+        <script src="/components/spending-chart.js"></script>
       </head>
       <body>
         <h1>Monthly Grocery Spending Breakdown</h1>
@@ -73,107 +77,9 @@ app.get('/', async (c) => {
           <a href="/">Back to All Data</a>
           <h2>${item ? `${item} Purchases in ${category}` : `${category} Spending By Month`}</h2>
         ` : ''}
-        ${ChartSection(displayData)}
+        ${ChartSection(displayData, category, item)}
         ${TransactionsTable(displayData)}
         ${TransactionsModal()}
-        
-        <script>
-          const mockData = ${JSON.stringify(displayData)};
-          const colors = [
-            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
-            '#9966FF', '#FF9F40', '#C9CBCF'
-          ];
-
-          Object.entries(mockData).forEach(([month, data], index) => {
-            const ctx = document.getElementById('chart' + index);
-            const isDetailView = ${Boolean(category)};
-            const isItemView = ${Boolean(item)};
-            
-            new Chart(ctx, {
-              type: 'pie',
-              data: {
-                labels: isItemView
-                  ? data[Object.keys(data)[0]].transactions.map(t => new Date(t.date).toLocaleDateString())
-                  : isDetailView
-                    ? Object.keys(data[Object.keys(data)[0]].items)
-                    : Object.keys(data),
-                datasets: [{
-                  data: isItemView
-                    ? data[Object.keys(data)[0]].transactions.map(t => t.amount)
-                    : isDetailView
-                      ? Object.values(data[Object.keys(data)[0]].items)
-                      : Object.values(data).map(categoryData => categoryData.total),
-                  backgroundColor: colors,
-                  hoverOffset: 4
-                }]
-              },
-              options: {
-                plugins: {
-                  tooltip: {
-                    callbacks: {
-                      label: function(context) {
-                        const label = context.label || '';
-                        const value = context.raw || 0;
-                        return label + ': $' + value.toFixed(2);
-                      }
-                    }
-                  }
-                },
-                onClick: isItemView ? null
-                  : isDetailView ? (event, elements) => {
-                      if (elements.length > 0) {
-                        const index = elements[0].index;
-                        const currentCategory = Object.keys(data)[0];
-                        const item = Object.keys(data[currentCategory].items)[index];
-                        window.location.href = \`?category=\${currentCategory}&item=\${encodeURIComponent(item)}\`;
-                      }
-                    }
-                  : (event, elements) => {
-                      if (elements.length > 0) {
-                        const index = elements[0].index;
-                        const category = Object.keys(data)[index];
-                        window.location.href = \`?category=\${encodeURIComponent(category)}\`;
-                      }
-                    }
-              }
-            });
-          });
-
-          function showTransactions(month, category) {
-            const modal = document.getElementById('transactionsModal');
-            const modalTitle = document.getElementById('modalTitle');
-            const transactionsBody = document.getElementById('transactionsBody');
-            
-            const transactions = mockData[month][category].transactions;
-            modalTitle.textContent = category + ' Transactions - ' + month;
-            
-            let html = '';
-            transactions.forEach(function(t) {
-              html += '<tr>' +
-                '<td>' + new Date(t.date).toLocaleDateString() + '</td>' +
-                '<td>' + t.storeName + '</td>' +
-                '<td>' + t.storeAddress + '</td>' +
-                '<td>' + t.item + '</td>' +
-                '<td>$' + t.amount.toFixed(2) + '</td>' +
-              '</tr>';
-            });
-            transactionsBody.innerHTML = html;
-            
-            modal.style.display = 'block';
-          }
-
-          function closeModal() {
-            document.getElementById('transactionsModal').style.display = 'none';
-          }
-
-          // Close modal when clicking outside
-          window.onclick = function(event) {
-            const modal = document.getElementById('transactionsModal');
-            if (event.target === modal) {
-              modal.style.display = 'none';
-            }
-          }
-        </script>
       </body>
     </html>
   `;

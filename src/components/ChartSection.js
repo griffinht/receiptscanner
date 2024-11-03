@@ -1,10 +1,15 @@
-function ChartSection(data) {
+function ChartSection(data, category, item) {
   return `
-    <div class="charts-container">
-      ${Object.entries(data).map(([month, data], index) => `
-        <div class="chart-wrapper">
-          <div class="chart-title">${month}</div>
-          <canvas id="chart${index}"></canvas>
+    <div class="chart-section">
+      ${Object.keys(data).map(month => `
+        <div class="chart-container">
+          <h3>${month}</h3>
+          <spending-chart
+            data='${JSON.stringify({ [month]: data[month] })}'
+            month="${month}"
+            is-detail-view="${Boolean(category)}"
+            is-item-view="${Boolean(item)}"
+          ></spending-chart>
         </div>
       `).join('')}
     </div>
