@@ -62,7 +62,10 @@ const categoriesRoute = async (c) => {
           <h2>${item ? `${item} Purchases in ${category}` : `${category} Spending By Month`}</h2>
         ` : ''}
         ${ChartSection(displayData, category, item)}
-        ${LineChartSection(displayData, category, item)}
+        <line-chart 
+          data='${JSON.stringify(displayData)}'
+          category="${category || ''}"
+        ></line-chart>
         ${TransactionsTable(displayData)}
       </div>
     `
