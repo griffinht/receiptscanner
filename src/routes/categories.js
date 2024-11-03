@@ -59,6 +59,10 @@ const categoriesRoute = async (c) => {
           <a href="/categories">Back to Categories</a>
           <h2>${item ? `${item} Purchases in ${category}` : `${category} Spending By Month`}</h2>
         ` : ''}
+        <pie-charts 
+          data='${JSON.stringify(displayData)}'
+          category="${category || ''}"
+        ></pie-charts>
         ${BarChart(displayData, category, item)}
         <line-chart 
           data='${JSON.stringify(displayData)}'

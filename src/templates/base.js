@@ -21,6 +21,7 @@ const BaseHTML = (title, content, activePage) => `
       <link rel="stylesheet" href="/css/nav.css">
       <script src="/components/LineChart.js"></script>
       <script src="/components/BarChart.js"></script>
+      <script src="/components/PieCharts.js"></script>
     </head>
     <body>
       ${NavBar(activePage)}
