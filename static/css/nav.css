@@ -1,0 +1,36 @@
+.top-nav {
+  background-color: #333;
+  padding: 1rem;
+  margin-bottom: 2rem;
+}
+
+.top-nav ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+}
+
+.top-nav a {
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.top-nav a:hover {
+  background-color: #555;
+}
+
+.top-nav a.active {
+  background-color: #4CAF50;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+} 
