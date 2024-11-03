@@ -1,221 +1,166 @@
 const { Hono } = require('hono')
 const { serve } = require('@hono/node-server')
 const { logger } = require('hono/logger')
-const sqlite3 = require('sqlite3').verbose()
-const { open } = require('sqlite')
+const { monthlySpendingRoute } = require('./routes/monthlySpending')
 
 // Create the app
 const app = new Hono()
 
-// Initialize database
-let db;
-const initDB = async () => {
-  db = await open({
-    filename: './database.sqlite',
-    driver: sqlite3.Database
-  });
+// Add middleware
+app.use('*', logger())
 
-  // Create stores table first
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS stores (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE
-    )
-  `);
-
-  // Create locations table
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS locations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      store_id INTEGER NOT NULL,
-      address TEXT NOT NULL,
-      FOREIGN KEY (store_id) REFERENCES stores(id),
-      UNIQUE(store_id, address)
-    )
-  `);
-
-  // Create categories table
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS categories (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      category TEXT NOT NULL,
-      department TEXT NOT NULL,
-      UNIQUE(category, department)
-    )
-  `);
-
-  // Create items table
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      category_id INTEGER NOT NULL,
-      FOREIGN KEY (category_id) REFERENCES categories(id),
-      UNIQUE(name, category_id)
-    )
-  `);
-
-  // Create receipts table
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS receipts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TIMESTAMP NOT NULL,
-      location_id INTEGER NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (location_id) REFERENCES locations(id)
-    )
-  `);
-
-  // Create transactions table with item reference
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS transactions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      receipt_id INTEGER NOT NULL,
-      name TEXT NOT NULL,
-      item_id INTEGER, -- can be null if not an item
-      total_cost REAL NOT NULL,
-      FOREIGN KEY (receipt_id) REFERENCES receipts(id),
-      FOREIGN KEY (item_id) REFERENCES items(id)
-    )
-  `);
-}
-
-// Initialize DB before starting server
-initDB().then(() => {
-  // Add middleware
-  app.use('*', logger())
-
-  // Add routes
-  //app.get('/', (c) => c.text('Hello Hoo!'))
-
-  app.get('/api/users', (c) => {
-    return c.json({
-      users: [
-        { id: 1, name: 'John' },
-        { id: 2, name: 'Jane' }
-      ]
-    })
+// Add routes
+app.get('/api/users', (c) => {
+  return c.json({
+    users: [
+      { id: 1, name: 'John' },
+      { id: 2, name: 'Jane' }
+    ]
   })
+})
 
-  // Add this route after your other routes
-  app.get('/', async (c) => {
-    const stores = await db.all('SELECT * FROM stores');
-    const locations = await db.all(`
-      SELECT l.id, s.name as store_name, l.address 
-      FROM locations l
-      JOIN stores s ON l.store_id = s.id
-    `);
-    const categories = await db.all('SELECT id, category, department FROM categories');
-    const items = await db.all(`
-      SELECT i.id, i.name, c.category, c.department
-      FROM items i
-      JOIN categories c ON i.category_id = c.id
-      ORDER BY c.department, c.category, i.name
-    `);
+// Mock data for grocery spending categories
+const mockSpendingData = {
+  'January 2024': {
+    'Produce': 125.45,
+    'Dairy': 85.30,
+    'Meat & Seafood': 165.90,
+    'Pantry Items': 95.20,
+    'Snacks': 45.75,
+    'Beverages': 55.40,
+    'Bakery': 35.25
+  },
+  'February 2024': {
+    'Produce': 138.60,
+    'Dairy': 92.40,
+    'Meat & Seafood': 145.75,
+    'Pantry Items': 88.90,
+    'Snacks': 52.30,
+    'Beverages': 48.95,
+    'Bakery': 42.15
+  },
+  'March 2024': {
+    'Produce': 132.80,
+    'Dairy': 88.95,
+    'Meat & Seafood': 158.40,
+    'Pantry Items': 92.65,
+    'Snacks': 48.90,
+    'Beverages': 52.75,
+    'Bakery': 38.80
+  }
+};
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          table { 
-            border-collapse: collapse; 
-            margin: 20px 0;
-            font-family: Arial, sans-serif;
-          }
-          th, td { 
-            border: 1px solid #ddd; 
-            padding: 8px; 
-            text-align: left;
-          }
-          th { 
-            background-color: #f2f2f2; 
-          }
-          h2 {
-            margin-top: 30px;
-            color: #333;
-          }
-        </style>
-      </head>
-      <body>
-        <h2>Stores</h2>
-        <table>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-          </tr>
-          ${stores.map(store => `
-            <tr>
-              <td>${store.id}</td>
-              <td>${store.name}</td>
-            </tr>
-          `).join('')}
-        </table>
+// Update home route
+app.get('/', async (c) => {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Receipt Scanner - Grocery Spending</title>
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <style>
+        body { 
+          font-family: Arial, sans-serif;
+          margin: 20px;
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 20px;
+          background-color: #f5f5f5;
+        }
+        h1 { 
+          color: #2c3e50;
+          text-align: center;
+          margin-bottom: 30px;
+        }
+        .charts-container {
+          display: flex;
+          justify-content: space-around;
+          flex-wrap: wrap;
+          margin-top: 30px;
+        }
+        .chart-wrapper {
+          width: 350px;
+          margin: 20px;
+          padding: 20px;
+          background-color: white;
+          border-radius: 10px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chart-title {
+          text-align: center;
+          margin-bottom: 15px;
+          font-weight: bold;
+          color: #34495e;
+          font-size: 1.2em;
+        }
+      </style>
+    </head>
+    <body>
+      <h1>Monthly Grocery Spending Breakdown</h1>
+      <div class="charts-container">
+        ${Object.entries(mockSpendingData).map(([month, data], index) => `
+          <div class="chart-wrapper">
+            <div class="chart-title">${month}</div>
+            <canvas id="chart${index}"></canvas>
+          </div>
+        `).join('')}
+      </div>
 
-        <h2>Locations</h2>
-        <table>
-          <tr>
-            <th>ID</th>
-            <th>Store</th>
-            <th>Address</th>
-          </tr>
-          ${locations.map(loc => `
-            <tr>
-              <td>${loc.id}</td>
-              <td>${loc.store_name}</td>
-              <td>${loc.address}</td>
-            </tr>
-          `).join('')}
-        </table>
+      <script>
+        const mockData = ${JSON.stringify(mockSpendingData)};
+        const colors = [
+          '#FF6384', // pink for produce
+          '#36A2EB', // blue for dairy
+          '#FFCE56', // yellow for meat
+          '#4BC0C0', // teal for pantry
+          '#9966FF', // purple for snacks
+          '#FF9F40', // orange for beverages
+          '#C9CBCF'  // gray for bakery
+        ];
 
-        <h2>Categories</h2>
-        <table>
-          <tr>
-            <th>ID</th>
-            <th>Category</th>
-            <th>Department</th>
-          </tr>
-          ${categories.map(cat => `
-            <tr>
-              <td>${cat.id}</td>
-              <td>${cat.category}</td>
-              <td>${cat.department}</td>
-            </tr>
-          `).join('')}
-        </table>
+        Object.entries(mockData).forEach(([month, data], index) => {
+          const ctx = document.getElementById('chart' + index);
+          new Chart(ctx, {
+            type: 'pie',
+            data: {
+              labels: Object.keys(data),
+              datasets: [{
+                data: Object.values(data),
+                backgroundColor: colors,
+                hoverOffset: 4
+              }]
+            },
+            options: {
+              plugins: {
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const label = context.label || '';
+                      const value = context.raw || 0;
+                      return \`\${label}: $\${value.toFixed(2)}\`;
+                    }
+                  }
+                }
+              }
+            }
+          });
+        });
+      </script>
+    </body>
+    </html>
+  `;
+  return c.html(html);
+});
 
-        <h2>Items</h2>
-        <table>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Department</th>
-          </tr>
-          ${items.map(item => `
-            <tr>
-              <td>${item.id}</td>
-              <td>${item.name}</td>
-              <td>${item.category}</td>
-              <td>${item.department}</td>
-            </tr>
-          `).join('')}
-        </table>
-      </body>
-      </html>
-    `;
+// Monthly spending route
+app.get('/monthly-spending', async (c) => {
+  return c.html(await monthlySpendingRoute());  // Note: removed db parameter
+});
 
-    return c.html(html);
-  });
-
-  // Start the server
-  serve({
-    fetch: app.fetch,
-    port: 3000
-  }, (info) => {
-    console.log(`Server is running on http://localhost:${info.port}`)
-  })
-}).catch(err => {
-  console.error('Failed to initialize database:', err)
-  process.exit(1)
+// Start the server
+serve({
+  fetch: app.fetch,
+  port: 3000
+}, (info) => {
+  console.log(`Server is running on http://localhost:${info.port}`)
 })
