@@ -14,6 +14,20 @@ app.use('*', logger())
 app.use('/*', serveStatic({ root: './static' }))
 
 app.get('/', async (c) => {
+  // Get query parameters
+  const month = c.req.query('month');
+  const category = c.req.query('category');
+  
+  // Filter data based on query parameters
+  let displayData = mockSpendingData;
+  if (month && category) {
+    displayData = {
+      [month]: {
+        [category]: mockSpendingData[month][category]
+      }
+    };
+  }
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -24,12 +38,13 @@ app.get('/', async (c) => {
       </head>
       <body>
         <h1>Monthly Grocery Spending Breakdown</h1>
-        ${ChartSection(mockSpendingData)}
-        ${TransactionsTable(mockSpendingData)}
+        ${month && category ? `<a href="/">Back to All Data</a>` : ''}
+        ${ChartSection(displayData)}
+        ${TransactionsTable(displayData)}
         ${TransactionsModal()}
         
         <script>
-          const mockData = ${JSON.stringify(mockSpendingData)};
+          const mockData = ${JSON.stringify(displayData)};
           const colors = [
             '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
             '#9966FF', '#FF9F40', '#C9CBCF'
@@ -96,7 +111,7 @@ app.get('/', async (c) => {
                   if (elements.length > 0) {
                     const index = elements[0].index;
                     const category = Object.keys(data)[index];
-                    showTransactions(month, category);
+                    window.location.href = \`?month=\${month}&category=\${category}\`;
                   }
                 }
               }
