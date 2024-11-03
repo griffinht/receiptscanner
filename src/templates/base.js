@@ -19,8 +19,8 @@ const BaseHTML = (title, content, activePage) => `
       <link rel="stylesheet" href="/css/transactions.css">
       <link rel="stylesheet" href="/css/modal.css">
       <link rel="stylesheet" href="/css/nav.css">
-      <script src="/components/spending-chart.js"></script>
       <script src="/components/LineChart.js"></script>
+      <script src="/components/BarChart.js"></script>
     </head>
     <body>
       ${NavBar(activePage)}

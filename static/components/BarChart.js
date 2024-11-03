@@ -1,4 +1,4 @@
-function createSpendingChart(data, selectedCategory, selectedItem) {
+function createBarChart(data, selectedCategory, selectedItem) {
   const ctx = document.getElementById('spendingChart');
   if (!ctx) return;
 

@@ -1,6 +1,4 @@
-const { BaseHTML } = require('../templates/base');
-const { BarChart: ChartSection } = require('../components/BarChart');
-const { LineChart: LineChartSection } = require('../components/LineChart');
+const { BarChart } = require('../components/BarChart');
 const { TransactionsTable } = require('../components/TransactionsTable');
 const { mockSpendingData } = require('../data/mockData');
 
@@ -100,7 +98,7 @@ const storesRoute = async (c) => {
           <a href="/stores">Back to Stores</a>
           <h2>${store} Spending Details</h2>
         ` : ''}
-        ${ChartSection(displayData, store)}
+        ${BarChart(displayData, store)}
         <line-chart 
           data='${JSON.stringify(displayData)}'
           category="${store || ''}"
