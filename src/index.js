@@ -71,7 +71,8 @@ const initDB = async () => {
     CREATE TABLE IF NOT EXISTS transactions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       receipt_id INTEGER NOT NULL,
-      item_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      item_id INTEGER, -- can be null if not an item
       total_cost REAL NOT NULL,
       FOREIGN KEY (receipt_id) REFERENCES receipts(id),
       FOREIGN KEY (item_id) REFERENCES items(id)
@@ -85,7 +86,7 @@ initDB().then(() => {
   app.use('*', logger())
 
   // Add routes
-  app.get('/', (c) => c.text('Hello Hoo!'))
+  //app.get('/', (c) => c.text('Hello Hoo!'))
 
   app.get('/api/users', (c) => {
     return c.json({
@@ -95,6 +96,117 @@ initDB().then(() => {
       ]
     })
   })
+
+  // Add this route after your other routes
+  app.get('/', async (c) => {
+    const stores = await db.all('SELECT * FROM stores');
+    const locations = await db.all(`
+      SELECT l.id, s.name as store_name, l.address 
+      FROM locations l
+      JOIN stores s ON l.store_id = s.id
+    `);
+    const categories = await db.all('SELECT id, category, department FROM categories');
+    const items = await db.all(`
+      SELECT i.id, i.name, c.category, c.department
+      FROM items i
+      JOIN categories c ON i.category_id = c.id
+      ORDER BY c.department, c.category, i.name
+    `);
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          table { 
+            border-collapse: collapse; 
+            margin: 20px 0;
+            font-family: Arial, sans-serif;
+          }
+          th, td { 
+            border: 1px solid #ddd; 
+            padding: 8px; 
+            text-align: left;
+          }
+          th { 
+            background-color: #f2f2f2; 
+          }
+          h2 {
+            margin-top: 30px;
+            color: #333;
+          }
+        </style>
+      </head>
+      <body>
+        <h2>Stores</h2>
+        <table>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+          </tr>
+          ${stores.map(store => `
+            <tr>
+              <td>${store.id}</td>
+              <td>${store.name}</td>
+            </tr>
+          `).join('')}
+        </table>
+
+        <h2>Locations</h2>
+        <table>
+          <tr>
+            <th>ID</th>
+            <th>Store</th>
+            <th>Address</th>
+          </tr>
+          ${locations.map(loc => `
+            <tr>
+              <td>${loc.id}</td>
+              <td>${loc.store_name}</td>
+              <td>${loc.address}</td>
+            </tr>
+          `).join('')}
+        </table>
+
+        <h2>Categories</h2>
+        <table>
+          <tr>
+            <th>ID</th>
+            <th>Category</th>
+            <th>Department</th>
+          </tr>
+          ${categories.map(cat => `
+            <tr>
+              <td>${cat.id}</td>
+              <td>${cat.category}</td>
+              <td>${cat.department}</td>
+            </tr>
+          `).join('')}
+        </table>
+
+        <h2>Items</h2>
+        <table>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Department</th>
+          </tr>
+          ${items.map(item => `
+            <tr>
+              <td>${item.id}</td>
+              <td>${item.name}</td>
+              <td>${item.category}</td>
+              <td>${item.department}</td>
+            </tr>
+          `).join('')}
+        </table>
+      </body>
+      </html>
+    `;
+
+    return c.html(html);
+  });
 
   // Start the server
   serve({
