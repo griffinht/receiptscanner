@@ -1,245 +1,294 @@
-// Store definitions
-const STORES = {
-  // 2024 Stores
-  FRESH_MARKET: { name: 'Fresh Market', address: '123 Main St, Anytown, USA' },
-  SUPER_FOODS: { name: 'Super Foods', address: '456 Oak Ave, Anytown, USA' },
-  GROCERY_HUB: { name: 'Grocery Hub', address: '789 Pine Rd, Anytown, USA' },
-  FARMERS_CHOICE: { name: 'Farmers Choice', address: '135 Maple St, Anytown, USA' },
-  // 2023 Stores
-  HOLIDAY_FRESH: { name: 'Holiday Fresh', address: '321 Elm St, Anytown, USA' },
-  WINTER_GREENS: { name: 'Winter Greens', address: '654 Spruce Ave, Anytown, USA' },
-  SEASONAL_MARKET: { name: 'Seasonal Market', address: '987 Cedar Rd, Anytown, USA' }
+const stores = {
+    1: 'Walmart',
+    2: 'Food Lion',
+}
+
+const locations = {
+    1: {
+        store_id: 1,
+        location: '123 Main St, Anytown, USA'
+    },
+    2: {
+        store_id: 2,
+        location: '456 Oak Ave, Anytown, USA'
+    },
+    3: {
+        store_id: 2,
+        location: '789 Pine Rd, Anytown, USA'
+    }
+}
+
+const categories = {
+    1: 'Dairy',
+    2: 'Produce',
+    3: 'Pantry',
+    4: 'Snacks',
+    5: 'Beverages',
+    6: 'Frozen',
+    7: 'Household',
+    8: 'Meat',
+    9: 'Seafood',
+    10: 'Pet Supplies',
+    11: 'Health',
+    12: 'Personal Care',
+    13: 'Deli',
+    14: 'Frozen/Dairy',
+    15: 'Grocery',
+    16: 'Health and Beauty'
 };
 
-// Helper functions
-const createTransaction = (date, item, amount, store) => ({
-  date,
-  item,
-  amount,
-  storeName: store.name,
-  storeAddress: store.address
-});
+const items = {
+    1: { name: 'Eggs', category: 1 },
+    2: { name: 'Bell Peppers', category: 2 },
+    3: { name: 'Carrots', category: 2 },
+    4: { name: 'Bananas', category: 2 },
+    5: { name: 'Milk', category: 1 },
+    6: { name: 'Yogurt', category: 1 },
+    7: { name: 'Apple Sauce', category: 3 },
+    8: { name: 'Nature Valley Bars', category: 4 },
+    9: { name: 'Monster Energy Drink', category: 5 },
+    10: { name: 'Cheerios', category: 3 },
+    11: { name: 'Coffee Creamer', category: 1 },
+    12: { name: 'Rice', category: 3 },
+    13: { name: 'Bai Drink', category: 5 },
+    14: { name: 'Ice Cream', category: 6 },
+    15: { name: 'Pasta Sauce', category: 3 },
+    16: { name: 'Paper Towels', category: 7 },
+    17: { name: 'Laundry Detergent', category: 7 },
+    18: { name: 'Granola Bars', category: 4 },
+    19: { name: 'Spices', category: 3 },
+    20: { name: 'Brown Rice', category: 3 },
+    21: { name: 'Mushrooms', category: 2 },
+    22: { name: 'Black Beans', category: 3 },
+    23: { name: 'Chiles', category: 2 },
+    24: { name: 'Boneless Chicken Thighs', category: 8 },
+    25: { name: 'Jalapeños', category: 2 },
+    26: { name: 'Edamame', category: 6 },
+    27: { name: 'Cod Fillets', category: 9 },
+    28: { name: 'Chicken Nuggets', category: 6 },
+    29: { name: 'Chicken Pack', category: 8 },
+    30: { name: 'Bull Bones', category: 10 },
+    31: { name: 'Red Onion', category: 2 },
+    32: { name: 'Avocado', category: 2 },
+    33: { name: 'Toilet Paper', category: 7 },
+    34: { name: 'Squeegee', category: 7 },
+    35: { name: 'Bone Cleaner', category: 10 },
+    36: { name: 'Washer Cleaner', category: 7 },
+    37: { name: 'Adhesive Bandages', category: 11 },
+    38: { name: 'Vinegar', category: 3 },
+    39: { name: 'Bath Aid', category: 12 },
+    40: { name: 'Ibuprofen', category: 11 },
+    41: { name: 'Bagel', category: 13 },
+    42: { name: 'Brussel Sprouts', category: 2 },
+    43: { name: 'Peas', category: 6 },
+    44: { name: 'Sardines', category: 9 },
+    45: { name: 'Tomato Paste', category: 3 },
+    46: { name: 'Olive Oil', category: 3 },
+    47: { name: 'Broth', category: 3 },
+    48: { name: 'Salmon', category: 9 },
+    49: { name: 'Chuck Roast', category: 8 },
+    50: { name: 'Lemons', category: 2 },
+    51: { name: 'Onions', category: 2 },
+    52: { name: 'Mushrooms', category: 2 },
+    53: { name: 'Potatoes', category: 2 },
+    54: { name: 'Celery', category: 2 },
+    55: { name: 'Garlic', category: 2 },
+    56: { name: 'Sweet Potatoes', category: 2 },
+    57: { name: 'Choc Chip Cookies', category: 4 },
+    58: { name: 'Greek Yogurt', category: 1 },
+    59: { name: 'Pistachios', category: 4 },
+    60: { name: 'Butter', category: 1 },
+    61: { name: 'Cultured Milk', category: 1 },
+    62: { name: 'Sour Cream', category: 1 },
+    63: { name: 'Green Peppers', category: 2 },
+    64: { name: 'Sriracha Sauce', category: 3 },
+    65: { name: 'Macaroni', category: 3 },
+    66: { name: 'Creamer', category: 1 },
+    67: { name: 'Assorted Cheese Block', category: 1 },
+    68: { name: 'English Peas', category: 6 },
+    69: { name: 'Northern Sardines', category: 9 },
+    70: { name: 'Chick Peas', category: 3 },
+    71: { name: 'Chicken Broth', category: 3 },
+    72: { name: 'Pink Salmon', category: 9 },
+    73: { name: 'Red Onions', category: 2 },
+    74: { name: 'Carrots without tops', category: 2 },
+    75: { name: 'White Onions', category: 2 },
+    76: { name: 'Whole White Mushrooms', category: 2 },
+    77: { name: 'Red Potatoes', category: 2 },
+    78: { name: 'Carrot Chips', category: 2 },
+    79: { name: 'Celery Hearts', category: 2 },
+    80: { name: 'Minced Garlic', category: 2 },
+    81: { name: 'Strawberries', category: 2 },
+    82: { name: 'Blueberries', category: 2 },
+    83: { name: 'Mixed Fruit', category: 2 },
+    84: { name: 'Mixed Vegetables', category: 2 },
+    85: { name: 'Green Beans', category: 2 },
+    86: { name: 'Raisins', category: 4 },
+    87: { name: 'Mixed Berries', category: 6 },
+    88: { name: 'Cut Vegetables', category: 2 },
+    89: { name: 'Fruit Cups', category: 4 },
+    90: { name: 'Apples', category: 2 },
+    91: { name: 'Petroleum Jelly', category: 12 }
+};
 
-const createDayTransactions = (date, store, items) => 
-  items.map(([item, amount]) => createTransaction(date, item, amount, store));
-
-// January 2024 Data
-const january2024 = {
-  'Produce': {
-    total: 245.82,
+const receipts = [
+  {
+    date: '2024-11-03',
+    location: 0,
     transactions: [
-      ...createDayTransactions('2024-01-03', STORES.FRESH_MARKET, [
-        ['Bananas', 4.99],
-        ['Spinach', 3.99],
-        ['Sweet Potatoes', 4.50]
-      ]),
-      ...createDayTransactions('2024-01-10', STORES.SUPER_FOODS, [
-        ['Bananas', 5.25],
-        ['Tomatoes', 6.50],
-        ['Baby Carrots', 3.99]
-      ]),
-      ...createDayTransactions('2024-01-15', STORES.GROCERY_HUB, [
-        ['Mixed Berries', 8.99],
-        ['Bananas', 4.75],
-        ['Kale', 3.50]
-      ]),
-      ...createDayTransactions('2024-01-20', STORES.FARMERS_CHOICE, [
-        ['Avocados', 5.99],
-        ['Bananas', 5.00],
-        ['Zucchini', 2.99]
-      ])
+      { item_id: 1, amount: 2.96 },
+      { item_id: 2, amount: 2.88 },
+      { item_id: 3, amount: 1.72 },
+      { item_id: 4, amount: 0.47 },
+      { item_id: 5, amount: 1.98 },
+      { item_id: 6, amount: 5.98 },
+      { item_id: 7, amount: 3.62 },
+      { item_id: 8, amount: 4.98 },
+      { item_id: 9, amount: 1.98 },
+      { item_id: 10, amount: 3.64 },
+      { item_id: 11, amount: 3.98 },
+      { item_id: 12, amount: 5.98 },
+      { item_id: 13, amount: 1.58 },
+      { item_id: 14, amount: 4.98 },
+      { item_id: 15, amount: 1.98 },
+      { item_id: 16, amount: 5.98 },
+      { item_id: 17, amount: 9.97 },
+      { item_id: 18, amount: 2.98 },
+      { item_id: 19, amount: 1.00 }
     ]
   },
-  'Dairy': {
-    total: 95.30,
+  {
+    date: '2024-04-27',
+    location: 0,
     transactions: [
-      ...createDayTransactions('2024-01-03', STORES.FRESH_MARKET, [
-        ['Whole Milk', 4.50],
-        ['Greek Yogurt', 5.99]
-      ]),
-      ...createDayTransactions('2024-01-10', STORES.SUPER_FOODS, [
-        ['Whole Milk', 4.75],
-        ['Greek Yogurt', 6.25],
-        ['Cheese Slices', 3.99]
-      ]),
-      ...createDayTransactions('2024-01-15', STORES.GROCERY_HUB, [
-        ['Cheese Block', 7.99],
-        ['Almond Milk', 4.99]
-      ]),
-      ...createDayTransactions('2024-01-20', STORES.FARMERS_CHOICE, [
-        ['Sour Cream', 3.99],
-        ['Greek Yogurt', 6.00]
-      ])
+      { item_id: 20, amount: 0.77 },
+      { item_id: 21, amount: 1.79 },
+      { item_id: 22, amount: 1.15 },
+      { item_id: 23, amount: 0.71 },
+      { item_id: 24, amount: 14.84 },
+      { item_id: 25, amount: 0.71 },
+      { item_id: 26, amount: 3.69 },
+      { item_id: 27, amount: 11.60 },
+      { item_id: 28, amount: 2.15 },
+      { item_id: 29, amount: 4.40 },
+      { item_id: 30, amount: 3.98 },
+      { item_id: 25, amount: 1.78 },
+      { item_id: 31, amount: 0.77 },
+      { item_id: 32, amount: 1.08 },
+      { item_id: 32, amount: 1.08 },
+      { item_id: 16, amount: 1.98 },
+      { item_id: 33, amount: 1.18 },
+      { item_id: 34, amount: 3.24 },
+      { item_id: 35, amount: 4.94 },
+      { item_id: 34, amount: 3.24 },
+      { item_id: 36, amount: 2.88 },
+      { item_id: 37, amount: 3.24 },
+      { item_id: 38, amount: 0.98 },
+      { item_id: 39, amount: 1.98 },
+      { item_id: 40, amount: 3.96 }
     ]
   },
-  'Meat': {
-    total: 175.50,
+  {
+    date: '2024-11-03',
+    location: 1,
     transactions: [
-      ...createDayTransactions('2024-01-05', STORES.FRESH_MARKET, [
-        ['Chicken Breast', 12.99],
-        ['Ground Beef', 8.99]
-      ]),
-      ...createDayTransactions('2024-01-12', STORES.SUPER_FOODS, [
-        ['Chicken Thighs', 10.99],
-        ['Ground Beef', 9.50],
-        ['Salmon Fillet', 15.99]
-      ]),
-      ...createDayTransactions('2024-01-19', STORES.GROCERY_HUB, [
-        ['Salmon Fillet', 16.50],
-        ['Pork Chops', 11.99]
-      ])
+      { item_id: 41, amount: 3.99 },
+      { item_id: 42, amount: 2.79 },
+      { item_id: 43, amount: 1.99 },
+      { item_id: 1, amount: 2.29 },
+      { item_id: 44, amount: 2.99 },
+      { item_id: 45, amount: 1.00 },
+      { item_id: 46, amount: 5.49 },
+      { item_id: 47, amount: 2.89 },
+      { item_id: 48, amount: 14.99 },
+      { item_id: 49, amount: 22.34 },
+      { item_id: 4, amount: 1.01 },
+      { item_id: 50, amount: 1.15 },
+      { item_id: 51, amount: 0.87 },
+      { item_id: 3, amount: 1.03 },
+      { item_id: 51, amount: 0.69 },
+      { item_id: 52, amount: 3.58 },
+      { item_id: 53, amount: 2.49 },
+      { item_id: 3, amount: 2.99 },
+      { item_id: 54, amount: 1.99 },
+      { item_id: 55, amount: 2.99 },
+      { item_id: 56, amount: 1.50 }
     ]
   },
-  'Pantry': {
-    total: 120.45,
+  {
+    date: '2024-09-22',
+    location: 1,
     transactions: [
-      ...createDayTransactions('2024-01-03', STORES.FRESH_MARKET, [
-        ['Pasta', 3.99],
-        ['Canned Tomatoes', 2.99]
-      ]),
-      ...createDayTransactions('2024-01-10', STORES.SUPER_FOODS, [
-        ['Rice', 5.99],
-        ['Cereal', 4.99]
-      ]),
-      ...createDayTransactions('2024-01-15', STORES.GROCERY_HUB, [
-        ['Olive Oil', 8.99],
-        ['Sugar', 3.99]
-      ]),
-      ...createDayTransactions('2024-01-20', STORES.FARMERS_CHOICE, [
-        ['Flour', 4.99],
-        ['Bread', 4.50]
-      ])
+      { item_id: 4, amount: 1.54 },
+      { item_id: 57, amount: 2.98 },
+      { item_id: 1, amount: 1.98 },
+      { item_id: 58, amount: 5.98 },
+      { item_id: 59, amount: 7.98 },
+      { item_id: 60, amount: 3.98 },
+      { item_id: 61, amount: 2.48 },
+      { item_id: 62, amount: 1.96 },
+      { item_id: 54, amount: 1.86 },
+      { item_id: 63, amount: 3.66 },
+      { item_id: 12, amount: 3.64 },
+      { item_id: 64, amount: 2.98 },
+      { item_id: 52, amount: 2.78 },
+      { item_id: 65, amount: 1.24 },
+      { item_id: 66, amount: 4.98 }
+    ]
+  },
+  {
+    date: '2024-11-03',
+    location: 2,
+    transactions: [
+      { item_id: 67, amount: 3.99 },
+      { item_id: 42, amount: 2.79 },
+      { item_id: 68, amount: 1.59 },
+      { item_id: 1, amount: 2.99 },
+      { item_id: 69, amount: 2.99 },
+      { item_id: 45, amount: 0.59 },
+      { item_id: 70, amount: 1.00 },
+      { item_id: 71, amount: 4.59 },
+      { item_id: 72, amount: 14.99 },
+      { item_id: 49, amount: 22.34 },
+      { item_id: 4, amount: 0.50 },
+      { item_id: 50, amount: 1.01 },
+      { item_id: 73, amount: 1.39 },
+      { item_id: 74, amount: 1.56 },
+      { item_id: 75, amount: 1.09 },
+      { item_id: 76, amount: 3.58 },
+      { item_id: 77, amount: 5.99 },
+      { item_id: 78, amount: 1.79 },
+      { item_id: 79, amount: 2.59 },
+      { item_id: 80, amount: 3.49 },
+      { item_id: 81, amount: 3.99 },
+      { item_id: 82, amount: 3.00 }
+    ]
+  },
+  {
+    date: '2024-10-15',
+    location: 1,
+    transactions: [
+      { item_id: 83, amount: 13.99 },
+      { item_id: 5, amount: 2.99 },
+      { item_id: 84, amount: 1.69 },
+      { item_id: 6, amount: 1.29 },
+      { item_id: 84, amount: 1.69 },
+      { item_id: 85, amount: 1.29 },
+      { item_id: 86, amount: 4.99 },
+      { item_id: 87, amount: 4.79 },
+      { item_id: 88, amount: 4.79 },
+      { item_id: 89, amount: 4.79 },
+      { item_id: 84, amount: 1.79 },
+      { item_id: 1, amount: 3.79 },
+      { item_id: 32, amount: 4.79 },
+      { item_id: 90, amount: 5.39 },
+      { item_id: 83, amount: 0.87 },
+      { item_id: 91, amount: 4.79 }
     ]
   }
-};
-
-// December 2023 Data
-const december2023 = {
-  'Produce': {
-    total: 118.75,
-    transactions: [
-      ...createDayTransactions('2023-12-02', STORES.HOLIDAY_FRESH, [
-        ['Apples', 5.99],
-        ['Carrots', 3.50]
-      ]),
-      ...createDayTransactions('2023-12-08', STORES.WINTER_GREENS, [
-        ['Bell Peppers', 4.99]
-      ]),
-      ...createDayTransactions('2023-12-22', STORES.SEASONAL_MARKET, [
-        ['Sweet Potatoes', 6.99]
-      ])
-    ]
-  },
-  'Dairy': {
-    total: 92.50,
-    transactions: [
-      ...createDayTransactions('2023-12-02', STORES.HOLIDAY_FRESH, [
-        ['Almond Milk', 4.99],
-        ['Cottage Cheese', 4.50]
-      ]),
-      ...createDayTransactions('2023-12-15', STORES.WINTER_GREENS, [
-        ['Butter', 5.99]
-      ]),
-      ...createDayTransactions('2023-12-22', STORES.SEASONAL_MARKET, [
-        ['Sour Cream', 3.99]
-      ])
-    ]
-  },
-  'Meat': {
-    total: 142.99,
-    transactions: [
-      ...createDayTransactions('2023-12-02', STORES.HOLIDAY_FRESH, [
-        ['Turkey Breast', 14.99]
-      ]),
-      ...createDayTransactions('2023-12-15', STORES.WINTER_GREENS, [
-        ['Pork Chops', 11.99]
-      ]),
-      ...createDayTransactions('2023-12-22', STORES.SEASONAL_MARKET, [
-        ['Ground Turkey', 7.99]
-      ])
-    ]
-  },
-  'Pantry': {
-    total: 105.25,
-    transactions: [
-      ...createDayTransactions('2023-12-02', STORES.HOLIDAY_FRESH, [
-        ['Flour', 4.99],
-        ['Sugar', 3.99]
-      ]),
-      ...createDayTransactions('2023-12-15', STORES.WINTER_GREENS, [
-        ['Olive Oil', 8.99]
-      ]),
-      ...createDayTransactions('2023-12-22', STORES.SEASONAL_MARKET, [
-        ['Bread', 4.50]
-      ])
-    ]
-  }
-};
-
-// November 2023 Data
-const november2023 = {
-  'Produce': {
-    total: 132.80,
-    transactions: [
-      ...createDayTransactions('2023-11-05', STORES.HOLIDAY_FRESH, [
-        ['Brussels Sprouts', 4.99],
-        ['Butternut Squash', 5.99]
-      ]),
-      ...createDayTransactions('2023-11-19', STORES.WINTER_GREENS, [
-        ['Green Beans', 3.99],
-        ['Cranberries', 4.50]
-      ])
-    ]
-  },
-  'Dairy': {
-    total: 78.95,
-    transactions: [
-      ...createDayTransactions('2023-11-05', STORES.HOLIDAY_FRESH, [
-        ['Heavy Cream', 4.99],
-        ['Cream Cheese', 3.99]
-      ]),
-      ...createDayTransactions('2023-11-19', STORES.WINTER_GREENS, [
-        ['Eggnog', 4.99],
-        ['Whipped Cream', 3.50]
-      ])
-    ]
-  },
-  'Meat': {
-    total: 168.50,
-    transactions: [
-      ...createDayTransactions('2023-11-12', STORES.HOLIDAY_FRESH, [
-        ['Thanksgiving Turkey', 45.99]
-      ]),
-      ...createDayTransactions('2023-11-19', STORES.WINTER_GREENS, [
-        ['Ham', 25.99],
-        ['Bacon', 7.99]
-      ])
-    ]
-  },
-  'Pantry': {
-    total: 115.30,
-    transactions: [
-      ...createDayTransactions('2023-11-05', STORES.HOLIDAY_FRESH, [
-        ['Stuffing Mix', 4.99],
-        ['Cranberry Sauce', 3.50]
-      ]),
-      ...createDayTransactions('2023-11-19', STORES.WINTER_GREENS, [
-        ['Pumpkin Pie Mix', 5.99],
-        ['Gravy Mix', 2.99]
-      ])
-    ]
-  }
-};
-
-const mockSpendingData = {
-  'January 2024': january2024,
-  'December 2023': december2023,
-  'November 2023': november2023
-};
+];
 
 module.exports = {
-  mockSpendingData,
-  STORES,
-  createTransaction,
-  createDayTransactions
+  receipts,
+  categories
 }; 

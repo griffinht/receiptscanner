@@ -6,6 +6,7 @@ const { BaseHTML } = require('./templates/base')
 const { homeRoute } = require('./routes/home')
 const { categoriesRoute } = require('./routes/categories')
 const { storesRoute } = require('./routes/stores')
+const { receiptRoute } = require('./routes/receipt')
 
 const app = new Hono()
 app.use('*', logger())
@@ -25,6 +26,7 @@ const wrapRoute = (routeHandler, pageName) => {
 app.get('/', wrapRoute(homeRoute, 'home'))
 app.get('/categories', wrapRoute(categoriesRoute, 'categories'))
 app.get('/stores', wrapRoute(storesRoute, 'stores'))
+app.get('/receipts/:id', wrapRoute(receiptRoute, 'receipt'))
 
 serve({
   fetch: app.fetch,

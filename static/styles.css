@@ -1,0 +1,33 @@
+.table-responsive {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.table th,
+.table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.receipt-header {
+  background-color: #f8f9fa;
+}
+
+.receipt-header td {
+  padding-top: 1.5rem;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+} 
