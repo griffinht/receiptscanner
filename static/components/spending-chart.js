@@ -1,106 +1,107 @@
-class SpendingChart extends HTMLElement {
-  constructor() {
-    super();
-    this.chart = null;
+function createSpendingChart(data, selectedCategory, selectedItem) {
+  const ctx = document.getElementById('spendingChart');
+  if (!ctx) return;
+
+  // Clear any existing chart
+  if (window.currentChart) {
+    window.currentChart.destroy();
   }
 
-  connectedCallback() {
-    // Create canvas if it doesn't exist
-    if (!this.querySelector('canvas')) {
-      const canvas = document.createElement('canvas');
-      this.appendChild(canvas);
-    }
-
-    // Wait for next frame to ensure canvas is ready
-    requestAnimationFrame(() => {
-      try {
-        const canvas = this.querySelector('canvas');
-        if (!canvas) {
-          console.error('Canvas element not found in spending-chart');
-          return;
+  const months = Object.keys(data);
+  let datasets = [];
+  
+  // If we're viewing a specific category/store
+  if (selectedCategory) {
+    if (selectedItem) {
+      // Show item spending across months
+      datasets = [{
+        label: selectedItem,
+        data: months.map(month => {
+          return data[month][selectedCategory]?.items[selectedItem] || 0;
+        }),
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1
+      }];
+    } else {
+      // Show all items in the category/store
+      const allItems = new Set();
+      months.forEach(month => {
+        if (data[month][selectedCategory]?.items) {
+          Object.keys(data[month][selectedCategory].items).forEach(item => allItems.add(item));
         }
+      });
 
-        const data = JSON.parse(this.getAttribute('data') || '{}');
-        const month = this.getAttribute('month');
-        const isDetailView = this.getAttribute('is-detail-view') === 'true';
-        const isItemView = this.getAttribute('is-item-view') === 'true';
-        
-        this.renderChart(canvas, data, month, isDetailView, isItemView);
-      } catch (error) {
-        console.error('Error initializing chart:', error);
-      }
+      datasets = Array.from(allItems).map(item => ({
+        label: item,
+        data: months.map(month => data[month][selectedCategory]?.items[item] || 0),
+        backgroundColor: `hsla(${Math.random() * 360}, 70%, 50%, 0.2)`,
+        borderColor: `hsla(${Math.random() * 360}, 70%, 50%, 1)`,
+        borderWidth: 1
+      }));
+    }
+  } else {
+    // Show all categories/stores
+    const allCategories = new Set();
+    months.forEach(month => {
+      Object.keys(data[month]).forEach(cat => allCategories.add(cat));
     });
+
+    datasets = Array.from(allCategories).map(category => ({
+      label: category,
+      data: months.map(month => data[month][category]?.total || 0),
+      backgroundColor: `hsla(${Math.random() * 360}, 70%, 50%, 0.2)`,
+      borderColor: `hsla(${Math.random() * 360}, 70%, 50%, 1)`,
+      borderWidth: 1
+    }));
   }
 
-  renderChart(canvas, data, month, isDetailView, isItemView) {
-    const monthData = data[month];
-    if (!monthData) {
-      console.error('No data found for month:', month, data);
-      return;
-    }
-
-    const labels = isItemView
-      ? monthData[Object.keys(monthData)[0]].transactions.map(t => new Date(t.date).toLocaleDateString())
-      : isDetailView
-        ? Object.keys(monthData[Object.keys(monthData)[0]].items)
-        : Object.keys(monthData);
-
-    const values = isItemView
-      ? monthData[Object.keys(monthData)[0]].transactions.map(t => t.amount)
-      : isDetailView
-        ? Object.values(monthData[Object.keys(monthData)[0]].items)
-        : Object.values(monthData).map(categoryData => categoryData.total);
-
-    console.log('Processed Data:', { labels, values }); // Debug log
-
-    this.chart = new Chart(canvas, {
-      type: 'pie',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: values,
-          backgroundColor: [
-            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
-            '#9966FF', '#FF9F40', '#C9CBCF'
-          ],
-          hoverOffset: 4
-        }]
+  window.currentChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: datasets
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function(value) {
+              return '$' + value.toFixed(2);
+            }
+          }
+        }
       },
-      options: {
-        responsive: true,
-        plugins: {
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                const label = context.label || '';
-                const value = context.raw || 0;
-                return label + ': $' + value.toFixed(2);
-              }
-            }
+      onClick: (event, elements) => {
+        if (elements.length > 0) {
+          const { datasetIndex } = elements[0];
+          const clickedLabel = datasets[datasetIndex].label;
+          
+          // Get current URL and path
+          const url = new URL(window.location.href);
+          const path = url.pathname;
+          
+          if (!selectedCategory) {
+            // If we're on the main view, clicking should filter by category/store
+            window.location.href = `${path}?${path.includes('stores') ? 'store' : 'category'}=${encodeURIComponent(clickedLabel)}`;
+          } else if (!selectedItem) {
+            // If we're viewing a category/store, clicking should filter by item
+            const params = new URLSearchParams(url.search);
+            params.set('item', clickedLabel);
+            window.location.href = `${path}?${params.toString()}`;
           }
-        },
-        onClick: isItemView ? null : (event, elements) => {
-          if (elements.length > 0) {
-            const index = elements[0].index;
-            if (isDetailView) {
-              const currentCategory = Object.keys(monthData)[0];
-              const item = Object.keys(monthData[currentCategory].items)[index];
-              window.location.href = `?category=${currentCategory}&item=${encodeURIComponent(item)}`;
-            } else {
-              const category = Object.keys(monthData)[index];
-              window.location.href = `?category=${encodeURIComponent(category)}`;
+        }
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `${context.dataset.label}: $${context.raw.toFixed(2)}`;
             }
           }
         }
       }
-    });
-  }
-
-  disconnectedCallback() {
-    if (this.chart) {
-      this.chart.destroy();
     }
-  }
-}
-
-customElements.define('spending-chart', SpendingChart); 
+  });
+} 
