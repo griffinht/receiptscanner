@@ -29,23 +29,23 @@ const january2024 = {
     total: 245.82,
     transactions: [
       ...createDayTransactions('2024-01-03', STORES.FRESH_MARKET, [
-        ['Organic Bananas', 4.99],
-        ['Fresh Spinach', 3.99],
+        ['Bananas', 4.99],
+        ['Spinach', 3.99],
         ['Sweet Potatoes', 4.50]
       ]),
       ...createDayTransactions('2024-01-10', STORES.SUPER_FOODS, [
-        ['Organic Bananas', 5.25],
+        ['Bananas', 5.25],
         ['Tomatoes', 6.50],
         ['Baby Carrots', 3.99]
       ]),
       ...createDayTransactions('2024-01-15', STORES.GROCERY_HUB, [
         ['Mixed Berries', 8.99],
-        ['Organic Bananas', 4.75],
-        ['Fresh Kale', 3.50]
+        ['Bananas', 4.75],
+        ['Kale', 3.50]
       ]),
       ...createDayTransactions('2024-01-20', STORES.FARMERS_CHOICE, [
         ['Avocados', 5.99],
-        ['Organic Bananas', 5.00],
+        ['Bananas', 5.00],
         ['Zucchini', 2.99]
       ])
     ]
