@@ -126,3 +126,25 @@ h1 {
   font-size: 1.2em;
   margin-top: 20px;
 }
+
+/* Add these styles if they don't already exist */
+.button {
+  display: inline-block;
+  padding: 6px 12px;
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.button:hover {
+  background-color: #0056b3;
+}
+
+/* If you don't already have container styles */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}

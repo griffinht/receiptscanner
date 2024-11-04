@@ -1,9 +1,23 @@
-const { receipts, items } = require('../data/mockData');
+const sqlite = require('better-sqlite3');
+const db = sqlite('shopping.db');
 
 const receiptRoute = async (c) => {
   const receiptId = parseInt(c.req.param('id'));
-  const receipt = receipts[receiptId];
   
+  const receipt = db.prepare(`
+    SELECT 
+      r.id,
+      r.date,
+      s.id as store_id,
+      s.name as store_name,
+      l.id as location_id,
+      l.address
+    FROM receipts r
+    JOIN locations l ON r.location_id = l.id
+    JOIN stores s ON l.store_id = s.id
+    WHERE r.id = ?
+  `).get(receiptId);
+
   if (!receipt) {
     return {
       title: 'Receipt Not Found',
@@ -11,59 +25,104 @@ const receiptRoute = async (c) => {
     };
   }
 
-  const total = receipt.transactions.reduce((sum, t) => sum + t.amount, 0);
+  const items = db.prepare(`
+    SELECT 
+      i.name as item_name,
+      c.name as category_name,
+      ri.amount
+    FROM receipt_items ri
+    JOIN items i ON ri.item_id = i.id
+    JOIN categories c ON i.category_id = c.id
+    WHERE ri.receipt_id = ?
+    ORDER BY c.name, i.name
+  `).all(receiptId);
+
+  const total = items.reduce((sum, item) => sum + item.amount, 0);
 
   const content = `
     <div class="container">
-      <h1>Edit Receipt</h1>
-      <form class="edit-receipt-form" action="/receipts/${receiptId}" method="POST">
-        <div class="form-group">
-          <label>Date:</label>
-          <input type="date" name="date" value="${receipt.date}" required>
-        </div>
-        
-        <div class="form-group">
-          <label>Location:</label>
-          <input type="number" name="location" value="${receipt.location}" required>
-        </div>
+      <h1>Receipt #${receiptId}</h1>
+      <div class="receipt-details">
+        <form method="POST" action="/receipts/${receiptId}/date">
+          <p>
+            <label for="date">Date:</label>
+            <input type="date" name="date" id="date" value="${receipt.date}">
+            <button type="submit" class="button-small">Update Date</button>
+          </p>
+        </form>
 
-        <h2>Transactions</h2>
-        <div class="transactions-list">
-          ${receipt.transactions.map((trans, index) => `
-            <div class="transaction-item">
-              <div class="form-group">
-                <label>Item:</label>
-                <input type="number" name="transactions[${index}][item_id]" 
-                       value="${trans.item_id}" required>
-                <span class="item-name">${items[trans.item_id]?.name || 'Unknown Item'}</span>
-              </div>
-              <div class="form-group">
-                <label>Amount:</label>
-                <input type="number" name="transactions[${index}][amount]" 
-                       value="${trans.amount}" step="0.01" required>
-              </div>
-            </div>
+        <p>
+          <label>Store:</label>
+          <a href="/stores/${receipt.store_id}">${receipt.store_name}, ${receipt.address}</a>
+        </p>
+      </div>
+
+      <table class="transactions-table">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Item</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(item => `
+            <tr>
+              <td>${item.category_name}</td>
+              <td>${item.item_name}</td>
+              <td>$${item.amount.toFixed(2)}</td>
+            </tr>
           `).join('')}
-        </div>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2" class="text-right"><strong>Total:</strong></td>
+            <td><strong>$${total.toFixed(2)}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
 
-        <div class="form-group total">
-          <strong>Total: $${total.toFixed(2)}</strong>
-        </div>
-
-        <div class="form-actions">
-          <button type="submit">Save Changes</button>
-          <a href="/" class="button">Cancel</a>
-        </div>
-      </form>
+      <div class="actions">
+        <a href="/" class="button">Back to Home</a>
+      </div>
     </div>
   `;
 
   return {
-    title: `Edit Receipt ${receiptId}`,
+    title: `Receipt ${receiptId}`,
     content
   };
 };
 
+const updateReceiptDate = async (c) => {
+  const receiptId = parseInt(c.req.param('id'));
+  const formData = await c.req.parseBody();
+  const newDate = formData.date;
+
+  db.prepare(`
+    UPDATE receipts 
+    SET date = ? 
+    WHERE id = ?
+  `).run(newDate, receiptId);
+};
+
+const updateReceiptLocation = async (c) => {
+  const receiptId = parseInt(c.req.param('id'));
+  const formData = await c.req.parseBody();
+  const newLocation = formData.location;
+
+  db.prepare(`
+    UPDATE receipts 
+    SET location_id = (
+      SELECT id FROM locations 
+      WHERE address = ?
+    )
+    WHERE id = ?
+  `).run(newLocation, receiptId);
+};
+
 module.exports = {
-  receiptRoute
+  receiptRoute,
+  updateReceiptDate,
+  updateReceiptLocation
 }; 

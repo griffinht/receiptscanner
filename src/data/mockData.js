@@ -289,6 +289,9 @@ const receipts = [
 ];
 
 module.exports = {
+  stores,
+  locations,
+  items,
   receipts,
   categories
 }; 
