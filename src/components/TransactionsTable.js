@@ -1,48 +1,55 @@
 const TransactionsTable = (data) => {
-  // Calculate total amount across all transactions
-  const totalAmount = Object.values(data).reduce((monthTotal, categories) => 
-    monthTotal + Object.values(categories).reduce((categoryTotal, { transactions }) =>
-      categoryTotal + transactions.reduce((transTotal, t) => transTotal + t.amount, 0)
-    , 0)
-  , 0);
+  const transactions = Object.entries(data).flatMap(([month, categories]) => 
+    Object.entries(categories).flatMap(([category, data]) =>
+      data.transactions.map(transaction => ({
+        ...transaction,
+        category
+      }))
+    )
+  );
 
-  const tableHtml = `
-    <div class="transactions-section">
-      <div class="total-amount">
-        Total Amount: $${totalAmount.toFixed(2)}
-      </div>
-      <table class="all-transactions-table">
+  if (transactions.length === 0) {
+    return '<p>No transactions found.</p>';
+  }
+
+  return `
+    <div class="table-responsive">
+      <table class="table">
         <thead>
           <tr>
             <th>Date</th>
             <th>Store</th>
             <th>Location</th>
-            <th>Category</th>
             <th>Item</th>
-            <th>Amount</th>
+            <th class="text-right">Amount</th>
           </tr>
         </thead>
         <tbody>
-          ${Object.entries(data).map(([month, categories]) => 
-            Object.entries(categories).map(([category, { transactions }]) =>
-              transactions.map(t => `
-                <tr>
-                  <td>${new Date(t.date).toLocaleDateString()}</td>
-                  <td>${t.storeName}</td>
-                  <td>${t.storeAddress}</td>
-                  <td>${category}</td>
-                  <td>${t.item}</td>
-                  <td>$${t.amount.toFixed(2)}</td>
-                </tr>
-              `).join('')
-            ).join('')
-          ).join('')}
+          ${transactions.map(transaction => `
+            <tr>
+              <td>
+                <a href="/receipts/${transaction.receipt_id}" class="date-link">
+                  ${new Date(transaction.date).toLocaleDateString()}
+                </a>
+              </td>
+              <td>${transaction.store}</td>
+              <td>${transaction.location}</td>
+              <td>${transaction.item}</td>
+              <td class="text-right">$${transaction.amount.toFixed(2)}</td>
+            </tr>
+          `).join('')}
         </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" class="text-right"><strong>Total:</strong></td>
+            <td class="text-right">
+              <strong>$${transactions.reduce((sum, t) => sum + t.amount, 0).toFixed(2)}</strong>
+            </td>
+          </tr>
+        </tfoot>
       </table>
     </div>
   `;
-
-  return tableHtml;
 };
 
 module.exports = { TransactionsTable }; 

@@ -17,9 +17,46 @@ const receiptsRoute = async (c, db) => {
     ORDER BY r.date DESC
   `);
 
+  // Get all stores/locations for the new receipt form
+  const locations = await db.all(`
+    SELECT 
+      l.id,
+      l.address,
+      s.name as store_name
+    FROM locations l
+    JOIN stores s ON l.store_id = s.id
+    ORDER BY s.name, l.address
+  `);
+
   const content = `
     <div class="container">
       <h1>All Receipts</h1>
+
+      <!-- New Receipt Form -->
+      <div class="new-receipt-form">
+        <h2>Add New Receipt</h2>
+        <form method="POST" action="/receipts/new">
+          <div class="form-group">
+            <label for="date">Date:</label>
+            <input type="date" id="date" name="date" required class="form-control" 
+                   value="${new Date().toISOString().split('T')[0]}">
+          </div>
+          
+          <div class="form-group">
+            <label for="location">Store & Location:</label>
+            <select name="location_id" required class="form-control">
+              <option value="">Select store location...</option>
+              ${locations.map(loc => `
+                <option value="${loc.id}">${loc.store_name} - ${loc.address}</option>
+              `).join('')}
+            </select>
+          </div>
+          
+          <button type="submit" class="button">Create Receipt</button>
+        </form>
+      </div>
+
+      <h2>Recent Receipts</h2>
       <table class="table">
         <thead>
           <tr>
@@ -38,7 +75,15 @@ const receiptsRoute = async (c, db) => {
               <td>${receipt.location}</td>
               <td class="text-right">$${receipt.total.toFixed(2)}</td>
               <td>
-                <a href="/receipts/${receipt.id}" class="button">Edit</a>
+                <div class="button-group">
+                  <a href="/receipts/${receipt.id}" class="button">Edit</a>
+                  <form method="POST" action="/receipts/${receipt.id}/delete" style="display: inline;">
+                    <button type="submit" class="button delete-button" 
+                            onclick="return confirm('Are you sure you want to delete this receipt and all its items?')">
+                      Delete
+                    </button>
+                  </form>
+                </div>
               </td>
             </tr>
           `).join('')}
@@ -190,6 +235,43 @@ const registerRoutes = (app, wrapRoute, db) => {
   app.get('/receipts', wrapRoute(receiptsRoute, 'receipts'));
   app.get('/receipts/:id', wrapRoute(receiptRoute, 'receipt'));
   
+  // Add new receipt
+  app.post('/receipts/new', async (c) => {
+    const formData = await c.req.parseBody();
+    const { date, location_id } = formData;
+
+    // Validate inputs
+    if (!date || !location_id) {
+      throw new Error('Missing required fields');
+    }
+
+    const result = await db.run(`
+      INSERT INTO receipts (date, location_id)
+      VALUES (?, ?)
+    `, [date, location_id]);
+    
+    return c.redirect(`/receipts/${result.lastID}`);
+  });
+
+  // Delete receipt
+  app.post('/receipts/:id/delete', async (c) => {
+    const receiptId = parseInt(c.req.param('id'));
+
+    // First delete all receipt items
+    await db.run(`
+      DELETE FROM receipt_items
+      WHERE receipt_id = ?
+    `, [receiptId]);
+
+    // Then delete the receipt
+    await db.run(`
+      DELETE FROM receipts
+      WHERE id = ?
+    `, [receiptId]);
+    
+    return c.redirect('/receipts');
+  });
+
   app.post('/receipts/:id/date', async (c) => {
     const receiptId = parseInt(c.req.param('id'));
     const formData = await c.req.parseBody();
