@@ -1,7 +1,7 @@
 const { itemLastUsed, getCurrentTimestamp } = require('../data/state');
 
 const itemsRoute = async (c, db) => {
-  // Get all items with their categories and last modified time
+  // Modify the items query to include receipt information
   const items = await db.all(`
     SELECT 
       i.id,
@@ -15,14 +15,48 @@ const itemsRoute = async (c, db) => {
          WHERE ri.item_id = i.id
         ), 
         '2000-01-01'
-      ) as last_used
+      ) as last_used,
+      (SELECT COUNT(*) 
+       FROM receipt_items ri 
+       WHERE ri.item_id = i.id
+      ) as usage_count,
+      GROUP_CONCAT(
+        DISTINCT json_object(
+          'receipt_id', r.id,
+          'date', r.date,
+          'store', s.name,
+          'amount', ri.amount
+        )
+      ) as receipts
     FROM items i
     JOIN categories c ON i.category_id = c.id
+    LEFT JOIN receipt_items ri ON ri.item_id = i.id
+    LEFT JOIN receipts r ON ri.receipt_id = r.id
+    LEFT JOIN locations l ON r.location_id = l.id
+    LEFT JOIN stores s ON l.store_id = s.id
+    GROUP BY i.id, i.name, c.id, c.name
     ORDER BY last_used DESC, c.name, i.name
   `);
 
+  // Parse the receipt JSON strings
+  const itemsWithReceipts = items.map(item => ({
+    ...item,
+    receipts: item.receipts ? item.receipts.split('},{').map(r => {
+      try {
+        // Clean up the string and parse it
+        const cleaned = r
+          .replace('[{', '{')
+          .replace('}]', '}')
+          .replace(/\\/g, '');
+        return JSON.parse(cleaned);
+      } catch (e) {
+        return null;
+      }
+    }).filter(r => r) : []
+  }));
+
   // Apply any in-memory last_used updates
-  const itemsWithUpdates = items.map(item => ({
+  const itemsWithUpdates = itemsWithReceipts.map(item => ({
     ...item,
     last_used: itemLastUsed.get(item.id) || item.last_used
   }));
@@ -104,7 +138,13 @@ const itemsRoute = async (c, db) => {
               ${category.items
                 .sort((a, b) => new Date(b.last_used) - new Date(a.last_used))
                 .map(item => `
-                <tr>
+                <tr class="${
+                  c.req.query('receipt') && 
+                  item.receipts && 
+                  item.receipts.some(r => r && r.receipt_id && r.receipt_id.toString() === c.req.query('receipt')) 
+                    ? 'highlighted-row' 
+                    : ''
+                }" id="item-${item.id}">
                   <td>
                     <form method="POST" action="/items/${item.id}/edit" style="display: inline;">
                       <input type="text" name="name" value="${item.item_name}" class="form-control" style="width: auto; display: inline;">
@@ -124,12 +164,32 @@ const itemsRoute = async (c, db) => {
                     </form>
                   </td>
                   <td>
-                    <form method="POST" action="/items/${item.id}/delete" style="display: inline;">
-                      <button type="submit" class="button delete-button" 
-                              onclick="return confirm('Are you sure you want to delete this item? This will affect all receipts using this item.')">
-                        Delete
-                      </button>
-                    </form>
+                    ${item.usage_count > 0 ? `
+                      <div class="item-usage">
+                        <button class="button delete-button" disabled>
+                          Delete
+                        </button>
+                        <div class="receipt-list">
+                          <p>Used in ${item.usage_count} receipt${item.usage_count === 1 ? '' : 's'}:</p>
+                          <ul>
+                            ${item.receipts.map(r => `
+                              <li>
+                                <a href="/receipts/${r.receipt_id}?highlight=${item.id}">
+                                  ${new Date(r.date).toLocaleDateString()} - ${r.store} ($${parseFloat(r.amount).toFixed(2)})
+                                </a>
+                              </li>
+                            `).join('')}
+                          </ul>
+                        </div>
+                      </div>
+                    ` : `
+                      <form method="POST" action="/items/${item.id}/delete" style="display: inline;">
+                        <button type="submit" class="button delete-button" 
+                                onclick="return confirm('Are you sure you want to delete this item?')">
+                          Delete
+                        </button>
+                      </form>
+                    `}
                   </td>
                 </tr>
               `).join('')}

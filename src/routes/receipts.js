@@ -216,7 +216,9 @@ const receiptRoute = async (c, db) => {
         </thead>
         <tbody id="sortable-items">
           ${items.map(item => `
-            <tr class="draggable-item" data-id="${item.receipt_item_id}">
+            <tr class="draggable-item ${item.item_id.toString() === c.req.query('highlight') ? 'highlighted-row' : ''}" 
+                data-id="${item.receipt_item_id}"
+                id="item-${item.item_id}">
               <td class="drag-handle">☰</td>
               <td>${item.category_name}</td>
               <td>${item.item_name}</td>
@@ -245,6 +247,12 @@ const receiptRoute = async (c, db) => {
       </table>
 
       <script>
+        // If there's a highlighted item, scroll to it
+        const highlightedItem = document.querySelector('.highlighted-row');
+        if (highlightedItem) {
+          highlightedItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
         new Sortable(document.getElementById('sortable-items'), {
           animation: 150,
           handle: '.drag-handle',

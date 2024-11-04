@@ -330,3 +330,96 @@ input[type="number"].form-control {
 .category-section .table {
   margin-bottom: 0;
 }
+
+/* Add to your existing CSS */
+.button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+[title] {
+  position: relative;
+  cursor: help;
+}
+
+[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 10px;
+  background: #333;
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+/* Add to your existing CSS */
+.item-usage {
+  position: relative;
+  display: inline-block;
+}
+
+.receipt-list {
+  display: none;
+  position: absolute;
+  left: 100%;
+  top: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  min-width: 300px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 100;
+}
+
+.item-usage:hover .receipt-list {
+  display: block;
+}
+
+.receipt-list p {
+  margin: 0 0 8px 0;
+  font-weight: bold;
+}
+
+.receipt-list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.receipt-list li {
+  margin-bottom: 4px;
+}
+
+.receipt-list a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.receipt-list a:hover {
+  text-decoration: underline;
+}
+
+/* Add to your existing CSS */
+.highlighted-row {
+  background-color: #fff3cd !important;
+  animation: highlight-fade 2s ease-out;
+}
+
+@keyframes highlight-fade {
+  from {
+    background-color: #ffc107 !important;
+  }
+  to {
+    background-color: #fff3cd !important;
+  }
+}
+
+tr:target {
+  background-color: #fff3cd !important;
+}
