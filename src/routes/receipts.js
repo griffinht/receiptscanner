@@ -72,7 +72,7 @@ const receiptsRoute = async (c, db) => {
         </thead>
         <tbody>
           ${receipts.map(receipt => `
-            <tr>
+            <tr class="${receipt.id.toString() === c.req.query('highlight') ? 'highlighted-row' : ''}">
               <td>${new Date(receipt.date).toLocaleDateString()}</td>
               <td>${receipt.store_name}</td>
               <td>${receipt.location}</td>
@@ -225,7 +225,7 @@ const receiptRoute = async (c, db) => {
         </thead>
         <tbody id="sortable-items">
           ${items.map(item => `
-            <tr class="draggable-item ${item.item_id.toString() === c.req.query('highlight') ? 'highlighted-row' : ''}" 
+            <tr class="draggable-item ${item.receipt_item_id.toString() === c.req.query('highlight') ? 'highlighted-row' : ''}" 
                 data-id="${item.receipt_item_id}">
               <td class="drag-handle">☰</td>
               <td>
@@ -302,7 +302,7 @@ const receiptRoute = async (c, db) => {
 // Route registration
 const registerRoutes = (app, wrapRoute, db) => {
   app.get('/receipts', wrapRoute(receiptsRoute, 'receipts'));
-  app.get('/receipts/:id', wrapRoute(receiptRoute, 'receipt'));
+  app.get('/receipts/:id', wrapRoute(receiptRoute, 'receipts'));
   
   // Add new receipt
   app.post('/receipts/new', async (c) => {
@@ -360,7 +360,7 @@ const registerRoutes = (app, wrapRoute, db) => {
       WHERE id = ?
     `, [newDate, receiptId]);
     
-    return c.redirect(`/receipts/${c.req.param('id')}`);
+    return c.redirect(`/receipts/${receiptId}`);
   });
   
   app.post('/receipts/:id/location', async (c) => {
@@ -457,7 +457,7 @@ const registerRoutes = (app, wrapRoute, db) => {
       WHERE id = ? AND receipt_id = ?
     `, [amount, itemId, receiptId]);
     
-    return c.redirect(`/receipts/${receiptId}`);
+    return c.redirect(`/receipts/${receiptId}?highlight=${itemId}`);
   });
 };
 

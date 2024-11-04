@@ -1,5 +1,3 @@
-const { itemLastUsed, getCurrentTimestamp } = require('../data/state');
-
 const itemsRoute = async (c, db) => {
   // Modify the items query to include receipt information
   const items = await db.all(`
@@ -55,14 +53,8 @@ const itemsRoute = async (c, db) => {
     }).filter(r => r) : []
   }));
 
-  // Apply any in-memory last_used updates
-  const itemsWithUpdates = itemsWithReceipts.map(item => ({
-    ...item,
-    last_used: itemLastUsed.get(item.id) || item.last_used
-  }));
-
   // Group items by category
-  const itemsByCategory = itemsWithUpdates.reduce((acc, item) => {
+  const itemsByCategory = itemsWithReceipts.reduce((acc, item) => {
     if (!acc[item.category_name]) {
       acc[item.category_name] = {
         id: item.category_id,
@@ -264,11 +256,6 @@ const registerRoutes = (app, wrapRoute, db) => {
 
     await db.run(query, params);
     
-    // Update the last_used timestamp with seconds precision
-    if (name || category_id) {
-      itemLastUsed.set(itemId, getCurrentTimestamp());
-    }
-    
     // Redirect back to items page with highlight parameter
     return c.redirect(`/items?highlight=${itemId}`);
   });
@@ -292,9 +279,6 @@ const registerRoutes = (app, wrapRoute, db) => {
       DELETE FROM items
       WHERE id = ?
     `, [itemId]);
-    
-    // Clean up the in-memory last_used date
-    itemLastUsed.delete(itemId);
     
     return c.redirect('/items');
   });

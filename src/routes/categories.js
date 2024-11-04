@@ -1,6 +1,5 @@
 const { BarChart } = require('../components/BarChart');
 const { TransactionsTable } = require('../components/TransactionsTable');
-const { itemLastUsed } = require('../data/state');
 
 const getDisplayData = async (db, category, item, startDate, endDate) => {
   // Base query with date filtering
@@ -48,15 +47,8 @@ const getDisplayData = async (db, category, item, startDate, endDate) => {
         transactions: [],
         total: 0,
         items: {},
-        stores: {},
-        lastModified: '2000-01-01T00:00:00.000Z' // Initialize lastModified
+        stores: {}
       };
-    }
-    
-    // Update category's lastModified based on item's last_used
-    const itemLastModified = itemLastUsed.get(item_id) || trans.date;
-    if (itemLastModified > acc[month][cat].lastModified) {
-      acc[month][cat].lastModified = itemLastModified;
     }
     
     // Add transaction with store info
@@ -108,16 +100,6 @@ const categoriesRoute = async (c, db) => {
   const categoriesWithUpdates = categories.map(cat => {
     let mostRecentModification = cat.last_used ? new Date(cat.last_used).toISOString() : '2000-01-01T00:00:00.000Z';
     
-    // Check all items in this category for in-memory modifications
-    if (cat.item_ids) {
-      cat.item_ids.split(',').forEach(itemId => {
-        const itemModified = itemLastUsed.get(parseInt(itemId));
-        if (itemModified && itemModified > mostRecentModification) {
-          mostRecentModification = itemModified;
-        }
-      });
-    }
-
     return {
       ...cat,
       last_used: mostRecentModification
