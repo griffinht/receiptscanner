@@ -34,7 +34,7 @@ const startServer = async () => {
   app.get('/stores/:id', wrapRoute(storeRoute, 'store'))
   
   // Register receipt routes
-  registerRoutes(app, wrapRoute);
+  registerRoutes(app, wrapRoute, db);
 
   serve({
     fetch: app.fetch,
