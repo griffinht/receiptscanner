@@ -1,5 +1,8 @@
 const { html } = require('hono/html');
 
+// Add at the top of the file
+const itemOrders = new Map(); // Store receipt item orders in memory
+
 // List all receipts
 const receiptsRoute = async (c, db) => {
   const receipts = await db.all(`
@@ -139,13 +142,24 @@ const receiptRoute = async (c, db) => {
       i.id as item_id,
       i.name as item_name,
       c.name as category_name,
-      ri.amount
+      ri.amount,
+      ri.id as display_order
     FROM receipt_items ri
     JOIN items i ON ri.item_id = i.id
     JOIN categories c ON i.category_id = c.id
     WHERE ri.receipt_id = ?
-    ORDER BY c.name, i.name
   `, [receiptId]);
+
+  // Sort items based on stored order
+  const receiptKey = `receipt_${receiptId}`;
+  if (itemOrders.has(receiptKey)) {
+    const orderMap = itemOrders.get(receiptKey);
+    items.sort((a, b) => {
+      const orderA = orderMap.get(a.receipt_item_id.toString()) || a.display_order;
+      const orderB = orderMap.get(b.receipt_item_id.toString()) || b.display_order;
+      return orderA - orderB;
+    });
+  }
 
   const total = items.reduce((sum, item) => sum + item.amount, 0);
 
@@ -190,18 +204,20 @@ const receiptRoute = async (c, db) => {
         </div>
       </form>
 
-      <table class="table">
+      <table class="table" id="items-table">
         <thead>
           <tr>
+            <th></th>
             <th>Category</th>
             <th>Item</th>
             <th class="text-right">Amount</th>
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="sortable-items">
           ${items.map(item => `
-            <tr>
+            <tr class="draggable-item" data-id="${item.receipt_item_id}">
+              <td class="drag-handle">☰</td>
               <td>${item.category_name}</td>
               <td>${item.item_name}</td>
               <td class="text-right">$${item.amount.toFixed(2)}</td>
@@ -215,12 +231,33 @@ const receiptRoute = async (c, db) => {
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="2" class="text-right"><strong>Total:</strong></td>
+            <td colspan="3" class="text-right"><strong>Total:</strong></td>
             <td class="text-right"><strong>$${total.toFixed(2)}</strong></td>
             <td></td>
           </tr>
         </tfoot>
       </table>
+
+      <script>
+        new Sortable(document.getElementById('sortable-items'), {
+          animation: 150,
+          handle: '.drag-handle',
+          onEnd: function(evt) {
+            const items = [...evt.to.children].map((tr, index) => ({
+              id: tr.dataset.id,
+              order: index + 1
+            }));
+
+            fetch('/receipts/${receiptId}/reorder', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ items })
+            });
+          }
+        });
+      </script>
     </div>
   `;
 
@@ -257,17 +294,19 @@ const registerRoutes = (app, wrapRoute, db) => {
   app.post('/receipts/:id/delete', async (c) => {
     const receiptId = parseInt(c.req.param('id'));
 
-    // First delete all receipt items
     await db.run(`
       DELETE FROM receipt_items
       WHERE receipt_id = ?
     `, [receiptId]);
 
-    // Then delete the receipt
     await db.run(`
       DELETE FROM receipts
       WHERE id = ?
     `, [receiptId]);
+    
+    // Clean up stored order
+    const receiptKey = `receipt_${receiptId}`;
+    itemOrders.delete(receiptKey);
     
     return c.redirect('/receipts');
   });
@@ -331,7 +370,35 @@ const registerRoutes = (app, wrapRoute, db) => {
       WHERE id = ? AND receipt_id = ?
     `, [itemId, receiptId]);
     
+    // Update stored order after deletion
+    const receiptKey = `receipt_${receiptId}`;
+    if (itemOrders.has(receiptKey)) {
+      const orderMap = itemOrders.get(receiptKey);
+      orderMap.delete(itemId.toString());
+      // If no items left, remove the entire receipt order
+      if (orderMap.size === 0) {
+        itemOrders.delete(receiptKey);
+      }
+    }
+    
     return c.redirect(`/receipts/${c.req.param('id')}`);
+  });
+
+  app.post('/receipts/:id/reorder', async (c) => {
+    const receiptId = parseInt(c.req.param('id'));
+    const { items } = await c.req.json();
+    
+    // Store the new order in memory
+    const receiptKey = `receipt_${receiptId}`;
+    const orderMap = new Map();
+    
+    items.forEach(item => {
+      orderMap.set(item.id.toString(), item.order);
+    });
+    
+    itemOrders.set(receiptKey, orderMap);
+    
+    return c.json({ success: true });
   });
 };
 

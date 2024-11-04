@@ -22,6 +22,7 @@ const BaseHTML = (title, content, activePage) => `
       <script src="/components/LineChart.js"></script>
       <script src="/components/BarChart.js"></script>
       <script src="/components/PieCharts.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     </head>
     <body>
       ${NavBar(activePage)}

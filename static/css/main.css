@@ -260,3 +260,28 @@ input[type="number"].form-control {
 .delete-button:hover {
   background-color: #c82333;
 }
+
+.drag-handle {
+  cursor: move;
+  color: #999;
+  width: 30px;
+  text-align: center;
+}
+
+.draggable-item {
+  background: white;
+  transition: background-color 0.2s;
+}
+
+.draggable-item.sortable-ghost {
+  opacity: 0.4;
+}
+
+.draggable-item.sortable-drag {
+  background: #f8f9fa;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#sortable-items tr:hover {
+  background-color: #f8f9fa;
+}
