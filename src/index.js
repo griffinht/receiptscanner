@@ -6,8 +6,7 @@ const { BaseHTML } = require('./templates/base')
 const { homeRoute } = require('./routes/home')
 const { categoriesRoute } = require('./routes/categories')
 const { storesRoute, storeRoute } = require('./routes/stores')
-const { receiptRoute, updateReceiptRoute, updateReceiptDate, updateReceiptLocation } = require('./routes/receipt')
-const { receiptsRoute } = require('./routes/receipts')
+const { registerRoutes } = require('./routes/receipts')
 const { initDb } = require('./data/data')
 
 const startServer = async () => {
@@ -33,20 +32,9 @@ const startServer = async () => {
   app.get('/categories', wrapRoute(categoriesRoute, 'categories'))
   app.get('/stores', wrapRoute(storesRoute, 'stores'))
   app.get('/stores/:id', wrapRoute(storeRoute, 'store'))
-  app.get('/receipts/:id', wrapRoute(receiptRoute, 'receipt'))
-  app.post('/receipts/:id', async (c) => {
-    await updateReceiptRoute(c, db);
-    return c.redirect(`/receipts/${c.req.param('id')}`);
-  })
-  app.post('/receipts/:id/date', async (c) => {
-    await updateReceiptDate(c, db);
-    return c.redirect(`/receipts/${c.req.param('id')}`);
-  })
-  app.post('/receipts/:id/location', async (c) => {
-    await updateReceiptLocation(c, db);
-    return c.redirect(`/receipts/${c.req.param('id')}`);
-  })
-  app.get('/receipts', wrapRoute(receiptsRoute, 'receipts'))
+  
+  // Register receipt routes
+  registerRoutes(app, wrapRoute);
 
   serve({
     fetch: app.fetch,
