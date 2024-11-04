@@ -3,7 +3,6 @@ const { serve } = require('@hono/node-server')
 const { logger } = require('hono/logger')
 const { serveStatic } = require('@hono/node-server/serve-static')
 const { BaseHTML } = require('./templates/base')
-const { homeRoute } = require('./routes/home')
 const { categoriesRoute } = require('./routes/categories')
 const { storesRoute, storeRoute } = require('./routes/stores')
 const { registerRoutes } = require('./routes/receipts')
@@ -28,8 +27,9 @@ const startServer = async () => {
     };
   };
 
-  // Routes
-  app.get('/', wrapRoute(homeRoute, 'home'))
+  // Redirect root to categories
+  app.get('/', (c) => c.redirect('/categories'))
+  
   app.get('/categories', wrapRoute(categoriesRoute, 'categories'))
   app.get('/stores', wrapRoute(storesRoute, 'stores'))
   app.get('/stores/:id', wrapRoute(storeRoute, 'store'))
