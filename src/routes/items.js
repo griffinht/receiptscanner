@@ -138,13 +138,7 @@ const itemsRoute = async (c, db) => {
               ${category.items
                 .sort((a, b) => new Date(b.last_used) - new Date(a.last_used))
                 .map(item => `
-                <tr class="${
-                  c.req.query('receipt') && 
-                  item.receipts && 
-                  item.receipts.some(r => r && r.receipt_id && r.receipt_id.toString() === c.req.query('receipt')) 
-                    ? 'highlighted-row' 
-                    : ''
-                }" id="item-${item.id}">
+                <tr class="${c.req.query('highlight') && item.id.toString() === c.req.query('highlight') ? 'highlighted-row' : ''}" id="item-${item.id}">
                   <td>
                     <form method="POST" action="/items/${item.id}/edit" style="display: inline;">
                       <input type="text" name="name" value="${item.item_name}" class="form-control" style="width: auto; display: inline;">
@@ -198,6 +192,19 @@ const itemsRoute = async (c, db) => {
         </div>
       `).join('')}
     </div>
+
+    <script>
+      // If there's a highlighted item, scroll to it
+      const highlightedItem = document.querySelector('.highlighted-row');
+      if (highlightedItem) {
+        setTimeout(() => {
+          highlightedItem.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+        }, 100);
+      }
+    </script>
   `;
 
   return {

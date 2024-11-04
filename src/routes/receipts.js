@@ -78,15 +78,7 @@ const receiptsRoute = async (c, db) => {
               <td>${receipt.location}</td>
               <td class="text-right">$${receipt.total.toFixed(2)}</td>
               <td>
-                <div class="button-group">
-                  <a href="/receipts/${receipt.id}" class="button">Edit</a>
-                  <form method="POST" action="/receipts/${receipt.id}/delete" style="display: inline;">
-                    <button type="submit" class="button delete-button" 
-                            onclick="return confirm('Are you sure you want to delete this receipt and all its items?')">
-                      Delete
-                    </button>
-                  </form>
-                </div>
+                <a href="/receipts/${receipt.id}" class="button">Edit</a>
               </td>
             </tr>
           `).join('')}
@@ -166,7 +158,18 @@ const receiptRoute = async (c, db) => {
   const content = `
     <div class="container">
       <div class="actions" style="margin-bottom: 20px;">
-        <a href="/receipts" class="button">← All Receipts</a>
+        <div class="button-group">
+          <a href="/receipts" class="button">← All Receipts</a>
+          <form method="POST" action="/receipts/${receiptId}/delete" style="display: inline;">
+            <button type="submit" 
+                    class="button delete-button" 
+                    ${total > 0 ? 'disabled' : ''}
+                    title="${total > 0 ? `Cannot delete: Receipt contains ${items.length} item${items.length === 1 ? '' : 's'}` : 'Delete this empty receipt'}"
+                    onclick="return confirm('Delete this empty receipt?')">
+              Delete Receipt
+            </button>
+          </form>
+        </div>
       </div>
       
       <h1>Receipt #${receiptId}</h1>
@@ -204,6 +207,12 @@ const receiptRoute = async (c, db) => {
         </div>
       </form>
 
+      <div class="receipt-header-sticky">
+        <div class="receipt-total">
+          Total: $${total.toFixed(2)}
+        </div>
+      </div>
+
       <table class="table" id="items-table">
         <thead>
           <tr>
@@ -217,11 +226,18 @@ const receiptRoute = async (c, db) => {
         <tbody id="sortable-items">
           ${items.map(item => `
             <tr class="draggable-item ${item.item_id.toString() === c.req.query('highlight') ? 'highlighted-row' : ''}" 
-                data-id="${item.receipt_item_id}"
-                id="item-${item.item_id}">
+                data-id="${item.receipt_item_id}">
               <td class="drag-handle">☰</td>
-              <td>${item.category_name}</td>
-              <td>${item.item_name}</td>
+              <td>
+                <a href="/categories?category=${encodeURIComponent(item.category_name)}" class="category-link">
+                  ${item.category_name}
+                </a>
+              </td>
+              <td>
+                <a href="/items?highlight=${item.item_id}" class="item-link">
+                  ${item.item_name}
+                </a>
+              </td>
               <td class="text-right">
                 <form method="POST" action="/receipts/${receiptId}/items/${item.receipt_item_id}/amount" style="display: inline;">
                   <input type="number" name="amount" value="${item.amount}" step="0.01" style="width: 100px;" class="form-control">
@@ -250,7 +266,9 @@ const receiptRoute = async (c, db) => {
         // If there's a highlighted item, scroll to it
         const highlightedItem = document.querySelector('.highlighted-row');
         if (highlightedItem) {
-          highlightedItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => {
+            highlightedItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 100);
         }
 
         new Sortable(document.getElementById('sortable-items'), {
@@ -308,10 +326,16 @@ const registerRoutes = (app, wrapRoute, db) => {
   app.post('/receipts/:id/delete', async (c) => {
     const receiptId = parseInt(c.req.param('id'));
 
-    await db.run(`
-      DELETE FROM receipt_items
+    // Check if receipt has any items
+    const itemCount = await db.get(`
+      SELECT COUNT(*) as count
+      FROM receipt_items
       WHERE receipt_id = ?
     `, [receiptId]);
+
+    if (itemCount.count > 0) {
+      throw new Error('Cannot delete receipt that has items');
+    }
 
     await db.run(`
       DELETE FROM receipts
