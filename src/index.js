@@ -8,6 +8,7 @@ const { categoriesRoute } = require('./routes/categories')
 const { storesRoute, storeRoute } = require('./routes/stores')
 const { registerRoutes } = require('./routes/receipts')
 const { initDb } = require('./data/data')
+const { registerRoutes: registerItemRoutes } = require('./routes/items')
 
 const startServer = async () => {
   const app = new Hono()
@@ -35,6 +36,9 @@ const startServer = async () => {
   
   // Register receipt routes
   registerRoutes(app, wrapRoute, db);
+
+  // Register item routes
+  registerItemRoutes(app, wrapRoute, db);
 
   serve({
     fetch: app.fetch,

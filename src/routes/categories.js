@@ -1,5 +1,6 @@
 const { BarChart } = require('../components/BarChart');
 const { TransactionsTable } = require('../components/TransactionsTable');
+const { itemLastUsed } = require('../data/state');
 
 const getDisplayData = async (db, category, item, startDate, endDate) => {
   // Base query with date filtering
@@ -7,6 +8,7 @@ const getDisplayData = async (db, category, item, startDate, endDate) => {
     SELECT 
       strftime('%Y-%m', r.date) as month,
       c.name as category,
+      i.id as item_id,
       i.name as item,
       ri.amount,
       r.date,
@@ -34,7 +36,7 @@ const getDisplayData = async (db, category, item, startDate, endDate) => {
   
   // Transform into the expected format
   const displayData = transactions.reduce((acc, trans) => {
-    const { month, category: cat, item: itemName, amount, store_name, location } = trans;
+    const { month, category: cat, item: itemName, item_id, amount, store_name, location } = trans;
     
     // Filter based on category/item if specified
     if (category && category !== cat) return acc;
@@ -47,8 +49,15 @@ const getDisplayData = async (db, category, item, startDate, endDate) => {
         transactions: [],
         total: 0,
         items: {},
-        stores: {}
+        stores: {},
+        lastModified: '2000-01-01T00:00:00.000Z' // Initialize lastModified
       };
+    }
+    
+    // Update category's lastModified based on item's last_used
+    const itemLastModified = itemLastUsed.get(item_id) || trans.date;
+    if (itemLastModified > acc[month][cat].lastModified) {
+      acc[month][cat].lastModified = itemLastModified;
     }
     
     // Add transaction with store info
@@ -81,17 +90,45 @@ const categoriesRoute = async (c, db) => {
   const startDate = c.req.query('start');
   const endDate = c.req.query('end');
   
-  // Get categories and their total spending
+  // Get categories with their total spending and most recent modification
   const categories = await db.all(`
     SELECT 
       c.name,
-      SUM(ri.amount) as total
+      c.id,
+      SUM(ri.amount) as total,
+      MAX(r.date) as last_used,
+      (SELECT GROUP_CONCAT(id) FROM items WHERE category_id = c.id) as item_ids
     FROM categories c
-    JOIN items i ON i.category_id = c.id
-    JOIN receipt_items ri ON ri.item_id = i.id
-    GROUP BY c.name
-    ORDER BY total DESC
+    LEFT JOIN items i ON i.category_id = c.id
+    LEFT JOIN receipt_items ri ON ri.item_id = i.id
+    LEFT JOIN receipts r ON ri.receipt_id = r.id
+    GROUP BY c.name, c.id
   `);
+
+  // Apply in-memory updates to category last_used dates
+  const categoriesWithUpdates = categories.map(cat => {
+    let mostRecentModification = cat.last_used ? new Date(cat.last_used).toISOString() : '2000-01-01T00:00:00.000Z';
+    
+    // Check all items in this category for in-memory modifications
+    if (cat.item_ids) {
+      cat.item_ids.split(',').forEach(itemId => {
+        const itemModified = itemLastUsed.get(parseInt(itemId));
+        if (itemModified && itemModified > mostRecentModification) {
+          mostRecentModification = itemModified;
+        }
+      });
+    }
+
+    return {
+      ...cat,
+      last_used: mostRecentModification
+    };
+  });
+
+  // Sort categories by most recent modification
+  const sortedCategories = categoriesWithUpdates.sort((a, b) => 
+    new Date(b.last_used) - new Date(a.last_used)
+  );
   
   const displayData = await getDisplayData(db, category, item, startDate, endDate);
 
@@ -122,7 +159,7 @@ const categoriesRoute = async (c, db) => {
               <label for="categorySelect">Category:</label>
               <select id="categorySelect" name="category">
                 <option value="">All Categories</option>
-                ${categories.map(cat => `
+                ${sortedCategories.map(cat => `
                   <option value="${cat.name}" ${category === cat.name ? 'selected' : ''}>
                     ${cat.name} ($${cat.total.toFixed(2)})
                   </option>

@@ -302,3 +302,31 @@ input[type="number"].form-control {
   display: flex;
   gap: 4px;
 }
+
+/* Add to your existing CSS */
+.category-section {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.category-section h2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.last-modified {
+  font-size: 14px;
+  color: #666;
+  font-weight: normal;
+}
+
+.category-section .table {
+  margin-bottom: 0;
+}

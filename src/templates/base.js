@@ -4,6 +4,7 @@ const NavBar = (activePage) => `
       <li><a href="/" class="${activePage === 'home' ? 'active' : ''}">Home</a></li>
       <li><a href="/categories" class="${activePage === 'categories' ? 'active' : ''}">Categories</a></li>
       <li><a href="/stores" class="${activePage === 'stores' ? 'active' : ''}">Stores</a></li>
+      <li><a href="/items" class="${activePage === 'items' ? 'active' : ''}">Items</a></li>
     </ul>
   </nav>
 `;

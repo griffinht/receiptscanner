@@ -1,0 +1,237 @@
+const { itemLastUsed, getCurrentTimestamp } = require('../data/state');
+
+const itemsRoute = async (c, db) => {
+  // Get all items with their categories and last modified time
+  const items = await db.all(`
+    SELECT 
+      i.id,
+      i.name as item_name,
+      c.id as category_id,
+      c.name as category_name,
+      COALESCE(
+        (SELECT MAX(r.date) 
+         FROM receipt_items ri 
+         JOIN receipts r ON ri.receipt_id = r.id 
+         WHERE ri.item_id = i.id
+        ), 
+        '2000-01-01'
+      ) as last_used
+    FROM items i
+    JOIN categories c ON i.category_id = c.id
+    ORDER BY last_used DESC, c.name, i.name
+  `);
+
+  // Apply any in-memory last_used updates
+  const itemsWithUpdates = items.map(item => ({
+    ...item,
+    last_used: itemLastUsed.get(item.id) || item.last_used
+  }));
+
+  // Group items by category
+  const itemsByCategory = itemsWithUpdates.reduce((acc, item) => {
+    if (!acc[item.category_name]) {
+      acc[item.category_name] = {
+        id: item.category_id,
+        items: [],
+        lastModified: item.last_used
+      };
+    }
+    acc[item.category_name].items.push(item);
+    // Update category's last modified if this item is more recent
+    if (item.last_used > acc[item.category_name].lastModified) {
+      acc[item.category_name].lastModified = item.last_used;
+    }
+    return acc;
+  }, {});
+
+  // Convert to array and sort by last modified
+  const sortedCategories = Object.entries(itemsByCategory)
+    .map(([name, data]) => ({
+      name,
+      id: data.id,
+      items: data.items,
+      lastModified: data.lastModified
+    }))
+    .sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
+
+  // Get all categories for the dropdown
+  const categories = await db.all(`
+    SELECT id, name
+    FROM categories
+    ORDER BY name
+  `);
+
+  const content = `
+    <div class="container">
+      <h1>Manage Items</h1>
+
+      <!-- Add New Item Form -->
+      <div class="new-receipt-form">
+        <h2>Add New Item</h2>
+        <form method="POST" action="/items/new">
+          <div class="form-group">
+            <label for="name">Item Name:</label>
+            <input type="text" id="name" name="name" required class="form-control">
+          </div>
+          
+          <div class="form-group">
+            <label for="category">Category:</label>
+            <select name="category_id" required class="form-control">
+              <option value="">Select category...</option>
+              ${categories.map(cat => `
+                <option value="${cat.id}">${cat.name}</option>
+              `).join('')}
+            </select>
+          </div>
+          
+          <button type="submit" class="button">Add Item</button>
+        </form>
+      </div>
+
+      <!-- Items List -->
+      ${sortedCategories.map(category => `
+        <div class="category-section">
+          <h2>${category.name}</h2>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Item Name</th>
+                <th>Category</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${category.items
+                .sort((a, b) => new Date(b.last_used) - new Date(a.last_used))
+                .map(item => `
+                <tr>
+                  <td>
+                    <form method="POST" action="/items/${item.id}/edit" style="display: inline;">
+                      <input type="text" name="name" value="${item.item_name}" class="form-control" style="width: auto; display: inline;">
+                      <button type="submit" class="button">Save</button>
+                    </form>
+                  </td>
+                  <td>
+                    <form method="POST" action="/items/${item.id}/edit" style="display: inline;">
+                      <select name="category_id" class="form-control" style="width: auto; display: inline;">
+                        ${categories.map(cat => `
+                          <option value="${cat.id}" ${cat.id === item.category_id ? 'selected' : ''}>
+                            ${cat.name}
+                          </option>
+                        `).join('')}
+                      </select>
+                      <button type="submit" class="button">Save</button>
+                    </form>
+                  </td>
+                  <td>
+                    <form method="POST" action="/items/${item.id}/delete" style="display: inline;">
+                      <button type="submit" class="button delete-button" 
+                              onclick="return confirm('Are you sure you want to delete this item? This will affect all receipts using this item.')">
+                        Delete
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  return {
+    title: 'Manage Items',
+    content
+  };
+};
+
+const registerRoutes = (app, wrapRoute, db) => {
+  app.get('/items', wrapRoute(itemsRoute, 'items'));
+
+  // Add new item
+  app.post('/items/new', async (c) => {
+    const formData = await c.req.parseBody();
+    const { name, category_id } = formData;
+
+    // Validate inputs
+    if (!name || !category_id) {
+      throw new Error('Missing required fields');
+    }
+
+    await db.run(`
+      INSERT INTO items (name, category_id)
+      VALUES (?, ?)
+    `, [name, category_id]);
+    
+    return c.redirect('/items');
+  });
+
+  // Edit item
+  app.post('/items/:id/edit', async (c) => {
+    const itemId = parseInt(c.req.param('id'));
+    const formData = await c.req.parseBody();
+    const { name, category_id } = formData;
+
+    if (!name && !category_id) {
+      throw new Error('Name or category is required');
+    }
+
+    // Build the update query based on what was provided
+    let query = 'UPDATE items SET ';
+    const params = [];
+
+    if (name) {
+      query += 'name = ?';
+      params.push(name);
+    }
+
+    if (category_id) {
+      if (name) query += ', ';
+      query += 'category_id = ?';
+      params.push(category_id);
+    }
+
+    query += ' WHERE id = ?';
+    params.push(itemId);
+
+    await db.run(query, params);
+    
+    // Update the last_used timestamp with seconds precision
+    if (name || category_id) {
+      itemLastUsed.set(itemId, getCurrentTimestamp());
+    }
+    
+    return c.redirect('/items');
+  });
+
+  // Delete item
+  app.post('/items/:id/delete', async (c) => {
+    const itemId = parseInt(c.req.param('id'));
+
+    // First check if the item is used in any receipts
+    const usageCount = await db.get(`
+      SELECT COUNT(*) as count
+      FROM receipt_items
+      WHERE item_id = ?
+    `, [itemId]);
+
+    if (usageCount.count > 0) {
+      throw new Error('Cannot delete item that is used in receipts');
+    }
+
+    await db.run(`
+      DELETE FROM items
+      WHERE id = ?
+    `, [itemId]);
+    
+    // Clean up the in-memory last_used date
+    itemLastUsed.delete(itemId);
+    
+    return c.redirect('/items');
+  });
+};
+
+module.exports = {
+  registerRoutes
+}; 
