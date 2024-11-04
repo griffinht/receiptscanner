@@ -220,10 +220,16 @@ const receiptRoute = async (c, db) => {
               <td class="drag-handle">☰</td>
               <td>${item.category_name}</td>
               <td>${item.item_name}</td>
-              <td class="text-right">$${item.amount.toFixed(2)}</td>
+              <td class="text-right">
+                <form method="POST" action="/receipts/${receiptId}/items/${item.receipt_item_id}/amount" style="display: inline;">
+                  <input type="number" name="amount" value="${item.amount}" step="0.01" style="width: 100px;" class="form-control">
+                  <button type="submit" class="button">Save</button>
+                </form>
+              </td>
               <td>
                 <form method="POST" action="/receipts/${receiptId}/items/${item.receipt_item_id}/delete" style="display: inline;">
-                  <button type="submit" class="button" onclick="return confirm('Are you sure you want to delete this item?')">Delete</button>
+                  <button type="submit" class="button delete-button" 
+                          onclick="return confirm('Are you sure you want to delete this item?')">Delete</button>
                 </form>
               </td>
             </tr>
@@ -399,6 +405,27 @@ const registerRoutes = (app, wrapRoute, db) => {
     itemOrders.set(receiptKey, orderMap);
     
     return c.json({ success: true });
+  });
+
+  // Add the new route for updating amounts
+  app.post('/receipts/:id/items/:itemId/amount', async (c) => {
+    const receiptId = parseInt(c.req.param('id'));
+    const itemId = parseInt(c.req.param('itemId'));
+    const formData = await c.req.parseBody();
+    const amount = parseFloat(formData.amount);
+
+    // Validate inputs
+    if (isNaN(amount) || amount < 0) {
+      throw new Error('Invalid amount');
+    }
+
+    await db.run(`
+      UPDATE receipt_items 
+      SET amount = ? 
+      WHERE id = ? AND receipt_id = ?
+    `, [amount, itemId, receiptId]);
+    
+    return c.redirect(`/receipts/${receiptId}`);
   });
 };
 

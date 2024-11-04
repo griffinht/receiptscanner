@@ -285,3 +285,20 @@ input[type="number"].form-control {
 #sortable-items tr:hover {
   background-color: #f8f9fa;
 }
+
+/* Add to your existing CSS */
+.amount-input {
+  width: 100px !important;
+  text-align: right;
+  display: none;
+}
+
+.edit-amount-btn {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.button-group {
+  display: flex;
+  gap: 4px;
+}
