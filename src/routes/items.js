@@ -21,6 +21,7 @@ const itemsRoute = async (c, db) => {
       GROUP_CONCAT(
         DISTINCT json_object(
           'receipt_id', r.id,
+          'receipt_item_id', ri.id,
           'date', r.date,
           'store', s.name,
           'amount', ri.amount
@@ -160,7 +161,7 @@ const itemsRoute = async (c, db) => {
                           <ul>
                             ${item.receipts.map(r => `
                               <li>
-                                <a href="/receipts/${r.receipt_id}?highlight=${item.id}">
+                                <a href="/receipts/${r.receipt_id}?highlight=${r.receipt_item_id}">
                                   ${new Date(r.date).toLocaleDateString()} - ${r.store} ($${parseFloat(r.amount).toFixed(2)})
                                 </a>
                               </li>
