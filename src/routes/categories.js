@@ -95,7 +95,7 @@ const categoriesRoute = async (c, db) => {
     SELECT 
       c.name,
       c.id,
-      SUM(ri.amount) as total,
+      COALESCE(SUM(ri.amount), 0) as total,
       MAX(r.date) as last_used,
       (SELECT GROUP_CONCAT(id) FROM items WHERE category_id = c.id) as item_ids
     FROM categories c
@@ -161,7 +161,7 @@ const categoriesRoute = async (c, db) => {
                 <option value="">All Categories</option>
                 ${sortedCategories.map(cat => `
                   <option value="${cat.name}" ${category === cat.name ? 'selected' : ''}>
-                    ${cat.name} ($${cat.total.toFixed(2)})
+                    ${cat.name} ($${(cat.total || 0).toFixed(2)})
                   </option>
                 `).join('')}
               </select>
