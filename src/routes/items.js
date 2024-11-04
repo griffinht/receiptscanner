@@ -269,7 +269,8 @@ const registerRoutes = (app, wrapRoute, db) => {
       itemLastUsed.set(itemId, getCurrentTimestamp());
     }
     
-    return c.redirect('/items');
+    // Redirect back to items page with highlight parameter
+    return c.redirect(`/items?highlight=${itemId}`);
   });
 
   // Delete item

@@ -13,8 +13,7 @@ const getDisplayData = async (db, category, item, startDate, endDate) => {
       ri.amount,
       r.date,
       r.id as receipt_id,
-      s.name as store_name,
-      l.address as location
+      s.name as store_name
     FROM receipt_items ri
     JOIN items i ON ri.item_id = i.id
     JOIN categories c ON i.category_id = c.id
@@ -36,7 +35,7 @@ const getDisplayData = async (db, category, item, startDate, endDate) => {
   
   // Transform into the expected format
   const displayData = transactions.reduce((acc, trans) => {
-    const { month, category: cat, item: itemName, item_id, amount, store_name, location } = trans;
+    const { month, category: cat, item: itemName, item_id, amount, store_name } = trans;
     
     // Filter based on category/item if specified
     if (category && category !== cat) return acc;
@@ -65,9 +64,9 @@ const getDisplayData = async (db, category, item, startDate, endDate) => {
       date: trans.date,
       receipt_id: trans.receipt_id,
       item: itemName,
+      item_id: item_id,
       amount: amount,
-      store: store_name,
-      location: location
+      store: store_name
     });
     
     // Update totals
@@ -75,7 +74,7 @@ const getDisplayData = async (db, category, item, startDate, endDate) => {
     acc[month][cat].items[itemName] = (acc[month][cat].items[itemName] || 0) + amount;
     
     // Track spending by store
-    const storeKey = `${store_name} - ${location}`;
+    const storeKey = `${store_name}`;
     acc[month][cat].stores[storeKey] = (acc[month][cat].stores[storeKey] || 0) + amount;
     
     return acc;

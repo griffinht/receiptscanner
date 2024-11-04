@@ -19,7 +19,7 @@ const TransactionsTable = (data) => {
           <tr>
             <th>Date</th>
             <th>Store</th>
-            <th>Location</th>
+            <th>Category</th>
             <th>Item</th>
             <th class="text-right">Amount</th>
           </tr>
@@ -33,8 +33,16 @@ const TransactionsTable = (data) => {
                 </a>
               </td>
               <td>${transaction.store}</td>
-              <td>${transaction.location}</td>
-              <td>${transaction.item}</td>
+              <td>
+                <a href="/categories?category=${encodeURIComponent(transaction.category)}" class="category-link">
+                  ${transaction.category}
+                </a>
+              </td>
+              <td>
+                <a href="/items?highlight=${transaction.item_id}" class="item-link">
+                  ${transaction.item}
+                </a>
+              </td>
               <td class="text-right">$${transaction.amount.toFixed(2)}</td>
             </tr>
           `).join('')}
