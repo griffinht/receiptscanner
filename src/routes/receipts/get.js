@@ -91,25 +91,6 @@ const get = async (c, db) => {
         </div>
       4</div>
 
-      <form method="POST" action="/receipts/${receiptId}/items" style="margin-bottom: 20px;">
-        <div style="display: flex; gap: 10px; align-items: flex-end;">
-          <div style="flex: 2;">
-            <select name="item_id" required class="form-control">
-              <option value="">Select an item...</option>
-              ${availableItems.map(item => `
-                <option value="${item.id}">${item.category_name} - ${item.item_name}</option>
-              `).join('')}
-            </select>
-          </div>
-          <div style="flex: 1;">
-            <input type="number" name="amount" step="0.01" required class="form-control" placeholder="Amount">
-          </div>
-          <div>
-            <button type="submit" class="button">Add Item</button>
-          </div>
-        </div>
-      </form>
-
       <div class="receipt-header-sticky">
         <div class="receipt-total">
           Total: $${total.toFixed(2)}
@@ -164,6 +145,25 @@ const get = async (c, db) => {
           </tr>
         </tfoot>
       </table>
+
+      <form method="POST" action="/receipts/${receiptId}/items" style="margin-top: 20px;">
+        <div style="display: flex; gap: 10px; align-items: flex-end;">
+          <div style="flex: 2;">
+            <select name="item_id" required class="form-control">
+              <option value="">Select an item...</option>
+              ${availableItems.map(item => `
+                <option value="${item.id}">${item.category_name} - ${item.item_name}</option>
+              `).join('')}
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <input type="number" name="amount" step="0.01" required class="form-control" placeholder="Amount">
+          </div>
+          <div>
+            <button type="submit" class="button">Add Item</button>
+          </div>
+        </div>
+      </form>
 
       <script>
         // If there's a highlighted item, scroll to it
