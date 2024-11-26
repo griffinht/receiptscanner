@@ -1,4 +1,4 @@
-const { getOrdersForReceipt, itemOrders } = require('./itemOrders');
+const { getOrdersForReceipt, itemOrders, sortItemsByOrder } = require('./itemOrders');
 
 // Single receipt view/edit
 const get = async (c, db) => {
@@ -49,18 +49,10 @@ const get = async (c, db) => {
     WHERE ri.receipt_id = ?
   `, [receiptId]);
 
-  // Sort items based on stored order
-  const receiptKey = `receipt_${receiptId}`;
-  if (itemOrders.has(receiptKey)) {
-    const orderMap = itemOrders.get(receiptKey);
-    items.sort((a, b) => {
-      const orderA = orderMap.get(a.receipt_item_id.toString()) || a.display_order;
-      const orderB = orderMap.get(b.receipt_item_id.toString()) || b.display_order;
-      return orderA - orderB;
-    });
-  }
+  // Use itemOrders to sort items
+  const sortedItems = sortItemsByOrder(receiptId, items);
 
-  const total = items.reduce((sum, item) => sum + item.amount, 0);
+  const total = sortedItems.reduce((sum, item) => sum + item.amount, 0);
 
   const content = `
     <div class="container">
@@ -93,7 +85,11 @@ const get = async (c, db) => {
           <label>Store:</label>
           <a href="/stores/${receipt.store_id}">${receipt.store_name}, ${receipt.address}</a>
         </p>
-      </div>
+        
+        <div class="receipt-image">
+          <img src="${receiptId}.png" alt="Scanned Receipt" style="max-width: 100%; margin: 20px 0;">
+        </div>
+      4</div>
 
       <form method="POST" action="/receipts/${receiptId}/items" style="margin-bottom: 20px;">
         <div style="display: flex; gap: 10px; align-items: flex-end;">
@@ -131,7 +127,7 @@ const get = async (c, db) => {
           </tr>
         </thead>
         <tbody id="sortable-items">
-          ${items.map(item => `
+          ${sortedItems.map(item => `
             <tr class="draggable-item ${item.receipt_item_id.toString() === c.req.query('highlight') ? 'highlighted-row' : ''}" 
                 data-id="${item.receipt_item_id}">
               <td class="drag-handle">☰</td>
