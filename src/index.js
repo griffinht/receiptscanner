@@ -6,7 +6,7 @@ const { BaseHTML } = require('./templates/base')
 const { categoriesRoute } = require('./routes/categories')
 const { storesRoute, storeRoute } = require('./routes/stores')
 const { registerRoutes } = require('./routes/receipts')
-const { initDb } = require('./data/data')
+const { initDb } = require('./db')
 const { registerRoutes: registerItemRoutes } = require('./routes/items')
 
 const startServer = async () => {
