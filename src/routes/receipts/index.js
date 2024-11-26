@@ -1,5 +1,6 @@
 const { html } = require('hono/html');
-const { setOrdersForReceipt, deleteOrdersForReceipt, itemOrders } = require('./receipts/itemOrders');
+const { setOrdersForReceipt } = require('./itemOrders');
+const { registerRoutes: getRegisterRoutes } = require('./get');
 
 // List all receipts
 const receiptsRoute = async (c, db) => {
@@ -91,12 +92,12 @@ const receiptsRoute = async (c, db) => {
   };
 };
 
-const getReceipt = require('./receipts/get');
+const getReceipt = require('./get');
 
 // Route registration
 const registerRoutes = (app, wrapRoute, db) => {
+  getRegisterRoutes(app, wrapRoute, db)
   app.get('/receipts', wrapRoute(receiptsRoute, 'receipts'));
-  app.get('/receipts/:id', wrapRoute(getReceipt, 'receipts'));
   
   // Add new receipt
   app.post('/receipts/new', async (c) => {
@@ -136,7 +137,6 @@ const registerRoutes = (app, wrapRoute, db) => {
       WHERE id = ?
     `, [receiptId]);
     
-    deleteOrdersForReceipt(receiptId);
     return c.redirect('/receipts');
   });
 
@@ -199,17 +199,6 @@ const registerRoutes = (app, wrapRoute, db) => {
       WHERE id = ? AND receipt_id = ?
     `, [itemId, receiptId]);
     
-    // Update stored order after deletion
-    const receiptKey = `receipt_${receiptId}`;
-    if (itemOrders.has(receiptKey)) {
-      const orderMap = itemOrders.get(receiptKey);
-      orderMap.delete(itemId.toString());
-      // If no items left, remove the entire receipt order
-      if (orderMap.size === 0) {
-        itemOrders.delete(receiptKey);
-      }
-    }
-    
     return c.redirect(`/receipts/${c.req.param('id')}`);
   });
 
@@ -222,8 +211,9 @@ const registerRoutes = (app, wrapRoute, db) => {
       orderMap.set(item.id.toString(), item.order);
     });
     
-    setOrdersForReceipt(receiptId, orderMap);
+    await setOrdersForReceipt(db, receiptId, orderMap);
     
+    // todo why do we do this?
     return c.json({ success: true });
   });
 

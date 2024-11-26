@@ -1,4 +1,4 @@
-const { getOrdersForReceipt, itemOrders, sortItemsByOrder } = require('./itemOrders');
+const { sortItemsByOrder } = require('./itemOrders');
 
 // Single receipt view/edit
 const get = async (c, db) => {
@@ -50,7 +50,7 @@ const get = async (c, db) => {
   `, [receiptId]);
 
   // Use itemOrders to sort items
-  const sortedItems = sortItemsByOrder(receiptId, items);
+  const sortedItems = await sortItemsByOrder(db, receiptId);
 
   const total = sortedItems.reduce((sum, item) => sum + item.amount, 0);
 
@@ -202,4 +202,10 @@ const get = async (c, db) => {
   };
 };
 
-module.exports = get;
+const registerRoutes = (app, wrapRoute, db) => {
+    app.get('/receipts/:id', wrapRoute(get, 'receipts'));
+}
+
+module.exports = {
+    registerRoutes
+}

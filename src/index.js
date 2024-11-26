@@ -5,9 +5,10 @@ const { serveStatic } = require('@hono/node-server/serve-static')
 const { BaseHTML } = require('./templates/base')
 const { categoriesRoute } = require('./routes/categories')
 const { storesRoute, storeRoute } = require('./routes/stores')
-const { registerRoutes } = require('./routes/receipts')
+const { registerRoutes } = require('./routes/receipts/index')
 const { initDb } = require('./db')
 const { registerRoutes: registerItemRoutes } = require('./routes/items')
+const { registerRoutes: registerDebugRoutes } = require('./routes/debug')
 
 const startServer = async () => {
   const app = new Hono()
@@ -39,6 +40,9 @@ const startServer = async () => {
 
   // Register item routes
   registerItemRoutes(app, wrapRoute, db);
+
+  // Register debug routes
+  registerDebugRoutes(app, wrapRoute, db);
 
   serve({
     fetch: app.fetch,
