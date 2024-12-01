@@ -1,4 +1,4 @@
-const { sortItemsByOrder } = require('./itemOrders');
+const { sortItemsByOrder } = require('./util/ItemOrders');
 
 // Single receipt view/edit
 const get = async (c, db) => {
@@ -54,6 +54,12 @@ const get = async (c, db) => {
 
   const total = sortedItems.reduce((sum, item) => sum + item.amount, 0);
 
+  // Add this: Calculate category totals for the chart
+  const categoryTotals = sortedItems.reduce((acc, item) => {
+    acc[item.category_name] = (acc[item.category_name] || 0) + item.amount;
+    return acc;
+  }, {});
+
   const content = `
     <div class="container">
       <div class="actions" style="margin-bottom: 20px;">
@@ -94,6 +100,13 @@ const get = async (c, db) => {
       <div class="receipt-header-sticky">
         <div class="receipt-total">
           Total: $${total.toFixed(2)}
+        </div>
+      </div>
+
+      <div style="margin: 40px 0;">
+        <h2>Spending Breakdown</h2>
+        <div style="max-width: 600px; margin: auto;">
+          <canvas id="categoryChart"></canvas>
         </div>
       </div>
 
@@ -165,6 +178,7 @@ const get = async (c, db) => {
         </div>
       </form>
 
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
       <script>
         // If there's a highlighted item, scroll to it
         const highlightedItem = document.querySelector('.highlighted-row');
@@ -190,6 +204,36 @@ const get = async (c, db) => {
               },
               body: JSON.stringify({ items })
             });
+          }
+        });
+
+        // Add this: Create the pie chart
+        const ctx = document.getElementById('categoryChart');
+        new Chart(ctx, {
+          type: 'pie',
+          data: {
+            labels: ${JSON.stringify(Object.keys(categoryTotals))},
+            datasets: [{
+              data: ${JSON.stringify(Object.values(categoryTotals))},
+              backgroundColor: [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                '#FF9F40', '#FF6384', '#C9CBCF', '#7BC8A4', '#E7E9ED'
+              ]
+            }]
+          },
+          options: {
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const value = context.raw;
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = ((value / total) * 100).toFixed(1);
+                    return \`\${context.label}: $\${value.toFixed(2)} (\${percentage}%)\`;
+                  }
+                }
+              }
+            }
           }
         });
       </script>

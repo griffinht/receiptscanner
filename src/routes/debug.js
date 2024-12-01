@@ -1,4 +1,4 @@
-const { sortItemsByOrder } = require('./receipts/ItemOrders');
+const { sortItemsByOrder } = require('./receipts/util/ItemOrders');
 
 const debugRoute = async (c, db) => {
   const receiptId = 5;

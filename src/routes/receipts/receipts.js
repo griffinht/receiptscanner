@@ -1,5 +1,5 @@
 const { html } = require('hono/html');
-const { setOrdersForReceipt } = require('./itemOrders');
+const { setOrdersForReceipt } = require('./util/ItemOrders');
 const { registerRoutes: getRegisterRoutes } = require('./get');
 
 // List all receipts
