@@ -1,4 +1,5 @@
 const { sortItemsByOrder } = require('./util/ItemOrders');
+const { get: itemsGet } = require('./items/items')
 
 // Single receipt view/edit
 const get = async (c, db) => {
@@ -37,17 +38,18 @@ const get = async (c, db) => {
 
   const items = await db.all(`
     SELECT 
-      ri.id as receipt_item_id,
-      i.id as item_id,
-      i.name as item_name,
-      c.name as category_name,
-      ri.amount,
-      ri.id as display_order
+        ri.id,
+        i.id as item_id,
+        i.name as item_name,
+        c.name as category_name,
+        ri.amount,
+        ri.display_order
     FROM receipt_items ri
     JOIN items i ON ri.item_id = i.id
-    JOIN categories c ON i.category_id = c.id
+    LEFT JOIN categories c ON i.category_id = c.id
     WHERE ri.receipt_id = ?
-  `, [receiptId]);
+    ORDER BY ri.display_order, i.name
+`, [receiptId]);
 
   // Use itemOrders to sort items
   const sortedItems = await sortItemsByOrder(db, receiptId);
@@ -110,6 +112,7 @@ const get = async (c, db) => {
         </div>
       </div>
 
+      ${await itemsGet(c, receiptId, db)}
       <table class="table" id="items-table">
         <thead>
           <tr>
@@ -122,12 +125,12 @@ const get = async (c, db) => {
         </thead>
         <tbody id="sortable-items">
           ${sortedItems.map(item => `
-            <tr class="draggable-item ${item.receipt_item_id.toString() === c.req.query('highlight') ? 'highlighted-row' : ''}" 
-                data-id="${item.receipt_item_id}">
+            <tr class="draggable-item ${item.id?.toString() === c.req.query('highlight') ? 'highlighted-row' : ''}" 
+                data-id="${item.id}">
               <td class="drag-handle">☰</td>
               <td>
                 <a href="/categories?category=${encodeURIComponent(item.category_name)}" class="category-link">
-                  ${item.category_name}
+                  ${item.category_name || 'Uncategorized'}
                 </a>
               </td>
               <td>
@@ -136,13 +139,13 @@ const get = async (c, db) => {
                 </a>
               </td>
               <td class="text-right">
-                <form method="POST" action="/receipts/${receiptId}/items/${item.receipt_item_id}/amount" style="display: inline;">
+                <form method="POST" action="/receipts/${receiptId}/items/${item.id}/amount" style="display: inline;">
                   <input type="number" name="amount" value="${item.amount}" step="0.01" style="width: 100px;" class="form-control">
                   <button type="submit" class="button">Save</button>
                 </form>
               </td>
               <td>
-                <form method="POST" action="/receipts/${receiptId}/items/${item.receipt_item_id}/delete" style="display: inline;">
+                <form method="POST" action="/receipts/${receiptId}/items/${item.id}/delete" style="display: inline;">
                   <button type="submit" class="button delete-button" 
                           onclick="return confirm('Are you sure you want to delete this item?')">Delete</button>
                 </form>

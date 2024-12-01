@@ -1,6 +1,7 @@
 const { html } = require('hono/html');
 const { setOrdersForReceipt } = require('./util/ItemOrders');
 const { registerRoutes: getRegisterRoutes } = require('./get');
+const { register: itemsRegister } = require('./items/items')
 
 // List all receipts
 const receiptsRoute = async (c, db) => {
@@ -97,6 +98,7 @@ const getReceipt = require('./get');
 // Route registration
 const registerRoutes = (app, wrapRoute, db) => {
   getRegisterRoutes(app, wrapRoute, db)
+  itemsRegister(app, db)
   app.get('/receipts', wrapRoute(receiptsRoute, 'receipts'));
   
   // Add new receipt
