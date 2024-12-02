@@ -67,32 +67,34 @@ const get = async (c, db) => {
       <div class="actions" style="margin-bottom: 20px;">
         <div class="button-group">
           <a href="../" class="button">← All Receipts</a>
-          <form method="POST" action="/receipts/${receiptId}/delete" style="display: inline;">
+          <form method="POST" action="delete" style="display: inline;">
             <button type="submit" 
                     class="button delete-button" 
                     ${total > 0 ? 'disabled' : ''}
                     title="${total > 0 ? `Cannot delete: Receipt contains ${items.length} item${items.length === 1 ? '' : 's'}` : 'Delete this empty receipt'}"
                     onclick="return confirm('Delete this empty receipt?')">
-              Delete Receipt
+              X
             </button>
           </form>
         </div>
       </div>
       
-      <h1>Receipt #${receiptId}</h1>
-      <div class="receipt-details">
-        <form method="POST" action="/receipts/${receiptId}/date">
+      <div style="display: flex;">
+        <form method="POST" action="date">
           <p>
             <label for="date">Date:</label>
-            <input type="date" name="date" id="date" value="${receipt.date}">
-            <button type="submit" class="button">Update Date</button>
+            <input type="date" name="date" id="date" value="${receipt.date}" onchange="this.form.submit()">
           </p>
         </form>
 
-        <p>
-          <label>Store:</label>
-          <a href="/stores/${receipt.store_id}">${receipt.store_name}, ${receipt.address}</a>
-        </p>
+        <form method="POST" action="store">
+          <p>
+            <label>Store:</label>
+            <p>todo update store</p>
+            <a href="/stores/${receipt.store_id}">${receipt.store_name}, ${receipt.address}</a>
+            <button type="submit" class="button">Update Store</button>
+          </p>
+        </form>
         
         <div class="receipt-image">
           <img src="${receiptId}.png" alt="Scanned Receipt" style="max-width: 100%; margin: 20px 0;">
@@ -139,13 +141,13 @@ const get = async (c, db) => {
                 </a>
               </td>
               <td class="text-right">
-                <form method="POST" action="/receipts/${receiptId}/items/${item.id}/amount" style="display: inline;">
+                <form method="POST" action="items/${item.id}/amount" style="display: inline;">
                   <input type="number" name="amount" value="${item.amount}" step="0.01" style="width: 100px;" class="form-control">
                   <button type="submit" class="button">Save</button>
                 </form>
               </td>
               <td>
-                <form method="POST" action="/receipts/${receiptId}/items/${item.id}/delete" style="display: inline;">
+                <form method="POST" action="items/${item.id}/delete" style="display: inline;">
                   <button type="submit" class="button delete-button" 
                           onclick="return confirm('Are you sure you want to delete this item?')">Delete</button>
                 </form>
