@@ -2,7 +2,7 @@ const NavBar = (activePage) => `
   <nav class="top-nav">
     <ul>
       <li><a href="/categories" class="${activePage === 'categories' ? 'active' : ''}">Categories</a></li>
-      <li><a href="/receipts" class="${activePage === 'receipts' ? 'active' : ''}">Receipts</a></li>
+      <li><a href="/receipts/" class="${activePage === 'receipts' ? 'active' : ''}">Receipts</a></li>
       <li><a href="/stores" class="${activePage === 'stores' ? 'active' : ''}">Stores</a></li>
       <li><a href="/items" class="${activePage === 'items' ? 'active' : ''}">Items</a></li>
     </ul>

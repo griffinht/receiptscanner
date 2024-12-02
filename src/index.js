@@ -14,6 +14,7 @@ const startServer = async () => {
   const app = new Hono()
   app.use('*', logger())
 
+
   // Initialize database
   const db = await initDb()
 
@@ -35,8 +36,10 @@ const startServer = async () => {
   app.get('/stores', wrapRoute(storesRoute, 'stores'))
   app.get('/stores/:id', wrapRoute(storeRoute, 'store'))
   
+  const receipts = new Hono()
   // Register receipt routes
-  registerRoutes(app, wrapRoute, db);
+  registerRoutes(receipts, wrapRoute, db);
+  app.route('/receipts/', receipts)
 
   // Register item routes
   registerItemRoutes(app, wrapRoute, db);

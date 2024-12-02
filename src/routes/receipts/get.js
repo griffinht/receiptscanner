@@ -66,7 +66,7 @@ const get = async (c, db) => {
     <div class="container">
       <div class="actions" style="margin-bottom: 20px;">
         <div class="button-group">
-          <a href="/receipts" class="button">← All Receipts</a>
+          <a href="../" class="button">← All Receipts</a>
           <form method="POST" action="/receipts/${receiptId}/delete" style="display: inline;">
             <button type="submit" 
                     class="button delete-button" 
@@ -250,7 +250,7 @@ const get = async (c, db) => {
 };
 
 const registerRoutes = (app, wrapRoute, db) => {
-    app.get('/receipts/:id', wrapRoute(get, 'receipts'));
+    app.get('/:id/', wrapRoute(get, 'receipts'));
 }
 
 module.exports = {

@@ -1,7 +1,7 @@
 const { html } = require('hono/html');
 
 const register = (app, db) => {
-    app.get('/receipts/:id/items/', async (c) => { return c.html(await get(c, parseInt(c.req.param('id')), db)) })
+    app.get('/:id/items/', async (c) => { return c.html(await get(c, parseInt(c.req.param('id')), db)) })
 }
 
 const get = async(c, receiptId, db) => {

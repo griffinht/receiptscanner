@@ -2,6 +2,7 @@ const { html } = require('hono/html');
 const { setOrdersForReceipt } = require('./util/ItemOrders');
 const { registerRoutes: getRegisterRoutes } = require('./get');
 const { register: itemsRegister } = require('./items/items')
+const { register: register_new } = require('./new')
 
 // List all receipts
 const receiptsRoute = async (c, db) => {
@@ -36,27 +37,8 @@ const receiptsRoute = async (c, db) => {
       <h1>All Receipts</h1>
 
       <!-- New Receipt Form -->
-      <div class="new-receipt-form">
-        <h2>Add New Receipt</h2>
-        <form method="POST" action="/receipts/new">
-          <div class="form-group">
-            <label for="date">Date:</label>
-            <input type="date" id="date" name="date" required class="form-control" 
-                   value="${new Date().toISOString().split('T')[0]}">
-          </div>
-          
-          <div class="form-group">
-            <label for="location">Store & Location:</label>
-            <select name="location_id" required class="form-control">
-              <option value="">Select store location...</option>
-              ${locations.map(loc => `
-                <option value="${loc.id}">${loc.store_name} - ${loc.address}</option>
-              `).join('')}
-            </select>
-          </div>
-          
-          <button type="submit" class="button">Create Receipt</button>
-        </form>
+      <div>
+        <p>Add new receipt:<a href="./new" class="button">+</a></p>
       </div>
 
       <h2>Recent Receipts</h2>
@@ -78,7 +60,7 @@ const receiptsRoute = async (c, db) => {
               <td>${receipt.location}</td>
               <td class="text-right">$${receipt.total.toFixed(2)}</td>
               <td>
-                <a href="/receipts/${receipt.id}" class="button">Edit</a>
+                <a href="${receipt.id}/" class="button">Edit</a>
               </td>
             </tr>
           `).join('')}
@@ -98,11 +80,12 @@ const getReceipt = require('./get');
 // Route registration
 const registerRoutes = (app, wrapRoute, db) => {
   getRegisterRoutes(app, wrapRoute, db)
+  register_new(app, db)
   itemsRegister(app, db)
-  app.get('/receipts', wrapRoute(receiptsRoute, 'receipts'));
+  app.get('/', wrapRoute(receiptsRoute, 'receipts'));
   
   // Add new receipt
-  app.post('/receipts/new', async (c) => {
+  app.post('/new', async (c) => {
     const formData = await c.req.parseBody();
     const { date, location_id } = formData;
 
@@ -120,7 +103,7 @@ const registerRoutes = (app, wrapRoute, db) => {
   });
 
   // Delete receipt
-  app.post('/receipts/:id/delete', async (c) => {
+  app.post('/:id/delete', async (c) => {
     const receiptId = parseInt(c.req.param('id'));
 
     // Check if receipt has any items
@@ -139,10 +122,10 @@ const registerRoutes = (app, wrapRoute, db) => {
       WHERE id = ?
     `, [receiptId]);
     
-    return c.redirect('/receipts');
+    return c.redirect('../');
   });
 
-  app.post('/receipts/:id/date', async (c) => {
+  app.post('/:id/date', async (c) => {
     const receiptId = parseInt(c.req.param('id'));
     const formData = await c.req.parseBody();
     const newDate = formData.date;
@@ -153,10 +136,10 @@ const registerRoutes = (app, wrapRoute, db) => {
       WHERE id = ?
     `, [newDate, receiptId]);
     
-    return c.redirect(`/receipts/${receiptId}`);
+    return c.redirect(`.`);
   });
   
-  app.post('/receipts/:id/location', async (c) => {
+  app.post('/:id/location', async (c) => {
     const receiptId = parseInt(c.req.param('id'));
     const formData = await c.req.parseBody();
     const newLocation = formData.location;
@@ -170,10 +153,10 @@ const registerRoutes = (app, wrapRoute, db) => {
       WHERE id = ?
     `, [newLocation, receiptId]);
     
-    return c.redirect(`/receipts/${c.req.param('id')}`);
+    return c.redirect(`.`);
   });
 
-  app.post('/receipts/:id/items', async (c) => {
+  app.post('/:id/items', async (c) => {
     const receiptId = parseInt(c.req.param('id'));
     const formData = await c.req.parseBody();
     const itemId = parseInt(formData.item_id);
@@ -189,10 +172,10 @@ const registerRoutes = (app, wrapRoute, db) => {
       VALUES (?, ?, ?)
     `, [receiptId, itemId, amount]);
     
-    return c.redirect(`/receipts/${c.req.param('id')}`);
+    return c.redirect(`.`);
   });
 
-  app.post('/receipts/:id/items/:itemId/delete', async (c) => {
+  app.post('/:id/items/:itemId/delete', async (c) => {
     const receiptId = parseInt(c.req.param('id'));
     const itemId = parseInt(c.req.param('itemId'));
 
@@ -201,10 +184,10 @@ const registerRoutes = (app, wrapRoute, db) => {
       WHERE id = ? AND receipt_id = ?
     `, [itemId, receiptId]);
     
-    return c.redirect(`/receipts/${c.req.param('id')}`);
+    return c.redirect(`../../`);
   });
 
-  app.post('/receipts/:id/reorder', async (c) => {
+  app.post('/:id/reorder', async (c) => {
     const receiptId = parseInt(c.req.param('id'));
     const { items } = await c.req.json();
     
@@ -220,7 +203,7 @@ const registerRoutes = (app, wrapRoute, db) => {
   });
 
   // Add the new route for updating amounts
-  app.post('/receipts/:id/items/:itemId/amount', async (c) => {
+  app.post('/:id/items/:itemId/amount', async (c) => {
     const receiptId = parseInt(c.req.param('id'));
     const itemId = parseInt(c.req.param('itemId'));
     const formData = await c.req.parseBody();
@@ -237,7 +220,7 @@ const registerRoutes = (app, wrapRoute, db) => {
       WHERE id = ? AND receipt_id = ?
     `, [amount, itemId, receiptId]);
     
-    return c.redirect(`/receipts/${receiptId}?highlight=${itemId}`);
+    return c.redirect(`../../?highlight=${itemId}`);
   });
 };
 
