@@ -83,25 +83,7 @@ const registerRoutes = (app, wrapRoute, db) => {
   register_new(app, db)
   itemsRegister(app, db)
   app.get('/', wrapRoute(receiptsRoute, 'receipts'));
-  
-  // Add new receipt
-  app.post('/new', async (c) => {
-    const formData = await c.req.parseBody();
-    const { date, location_id } = formData;
-
-    // Validate inputs
-    if (!date || !location_id) {
-      throw new Error('Missing required fields');
-    }
-
-    const result = await db.run(`
-      INSERT INTO receipts (date, location_id)
-      VALUES (?, ?)
-    `, [date, location_id]);
-    
-    return c.redirect(`/receipts/${result.lastID}`);
-  });
-
+ 
   // Delete receipt
   app.post('/:id/delete', async (c) => {
     const receiptId = parseInt(c.req.param('id'));
