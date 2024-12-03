@@ -138,25 +138,6 @@ const registerRoutes = (app, wrapRoute, db) => {
     return c.redirect(`.`);
   });
 
-  app.post('/:id/items', async (c) => {
-    const receiptId = parseInt(c.req.param('id'));
-    const formData = await c.req.parseBody();
-    const itemId = parseInt(formData.item_id);
-    const amount = parseFloat(formData.amount);
-
-    // Validate inputs
-    if (!receiptId || !itemId || isNaN(amount)) {
-      throw new Error('Invalid input parameters');
-    }
-
-    await db.run(`
-      INSERT INTO receipt_items (receipt_id, item_id, amount)
-      VALUES (?, ?, ?)
-    `, [receiptId, itemId, amount]);
-    
-    return c.redirect(`.`);
-  });
-
   app.post('/:id/items/:itemId/delete', async (c) => {
     const receiptId = parseInt(c.req.param('id'));
     const itemId = parseInt(c.req.param('itemId'));

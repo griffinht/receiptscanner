@@ -7,8 +7,13 @@ const addItem = (availableItems) => {
     <form method="POST" action="items" style="margin-top: 20px;">
       <div style="display: flex; gap: 10px; align-items: flex-end;">
         <div style="flex: 2;">
-          <select name="item_id" class="form-control" required>
-            <option value="">Select an item...</option>
+          <input type="text" 
+                 name="item_name" 
+                 class="form-control" 
+                 placeholder="Enter item name or select from dropdown" 
+                 list="items-list" 
+                 required>
+          <datalist id="items-list">
             ${availableItems
               .sort((a, b) => {
                 if (a.category_name !== b.category_name) {
@@ -17,12 +22,10 @@ const addItem = (availableItems) => {
                 return a.item_name.localeCompare(b.item_name);
               })
               .map(item => `
-                <option value="${item.id}">
-                  ${item.item_name} - ${item.category_name}
-                </option>
+                <option data-id="${item.id}" value="${item.item_name}">${item.category_name}</option>
               `).join('')}
-            <option value="new">+ Add new item...</option>
-          </select>
+          </datalist>
+          <input type="hidden" name="item_id">
         </div>
         <div style="flex: 1;">
           <input type="number" name="amount" step="0.01" required class="form-control" placeholder="Amount">
@@ -31,14 +34,16 @@ const addItem = (availableItems) => {
           <button type="submit" class="button">Add Item</button>
         </div>
       </div>
-
-      <div id="newItemInput" style="display: none; margin-top: 10px;">
-        <input type="text" 
-               name="new_item_name" 
-               class="form-control" 
-               placeholder="Enter new item name">
-      </div>
     </form>
+
+    <script>
+      // Update hidden item_id based on selected item_name
+      document.querySelector('input[name="item_name"]').addEventListener('input', function() {
+        const datalist = document.getElementById('items-list');
+        const option = Array.from(datalist.options).find(opt => opt.value === this.value);
+        document.querySelector('input[name="item_id"]').value = option ? option.dataset.id : '';
+      });
+    </script>
   `;
 };
 
@@ -263,19 +268,6 @@ const get = async (c, db) => {
                 }
               }
             }
-          }
-        });
-
-        const itemSelect = document.querySelector('select[name="item_id"]');
-        const newItemInput = document.getElementById('newItemInput');
-
-        itemSelect.addEventListener('change', function() {
-          if (this.value === 'new') {
-            newItemInput.style.display = 'block';
-            newItemInput.querySelector('input').required = true;
-          } else {
-            newItemInput.style.display = 'none';
-            newItemInput.querySelector('input').required = false;
           }
         });
       </script>

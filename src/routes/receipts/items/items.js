@@ -2,6 +2,36 @@ const { html } = require('hono/html');
 
 const register = (app, db) => {
     app.get('/:id/items/', async (c) => { return c.html(await get(c, parseInt(c.req.param('id')), db)) })
+    app.post('/:id/items', async (c) => {
+        const receiptId = parseInt(c.req.param('id'));
+        const formData = await c.req.parseBody();
+        let itemId = parseInt(formData.item_id);
+        const itemName = formData.item_name;
+        const amount = parseFloat(formData.amount);
+
+        // Validate inputs
+        if (!receiptId || (!itemId && !itemName) || isNaN(amount)) {
+            throw new Error('Invalid input parameters');
+        }
+
+        // If no itemId, create a new item
+        if (!itemId) {
+            const result = await db.run(`
+                INSERT INTO items (name)
+                VALUES (?)
+            `, [itemName]);
+            itemId = result.lastID;
+        }
+
+        // Add item to receipt
+        await db.run(`
+            INSERT INTO receipt_items (receipt_id, item_id, amount)
+            VALUES (?, ?, ?)
+        `, [receiptId, itemId, amount]);
+
+        return c.redirect(`.`);
+    });
+
 }
 
 const get = async(c, receiptId, db) => {
