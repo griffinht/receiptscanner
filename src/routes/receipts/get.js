@@ -1,53 +1,6 @@
 const { sortItemsByOrder } = require('./util/ItemOrders');
-const { get: itemsGet } = require('./items/items')
+const { get: itemsGet, addItem } = require('./items/items');
 
-// Add this new function above the get function
-const addItem = (availableItems) => {
-  return `
-    <form method="POST" action="items" style="margin-top: 20px;">
-      <div style="display: flex; gap: 10px; align-items: flex-end;">
-        <div style="flex: 2;">
-          <input type="text" 
-                 name="item_name" 
-                 class="form-control" 
-                 placeholder="Enter item name or select from dropdown" 
-                 list="items-list" 
-                 required>
-          <datalist id="items-list">
-            ${availableItems
-              .sort((a, b) => {
-                if (a.category_name !== b.category_name) {
-                  return a.category_name.localeCompare(b.category_name);
-                }
-                return a.item_name.localeCompare(b.item_name);
-              })
-              .map(item => `
-                <option data-id="${item.id}" value="${item.item_name}">${item.category_name}</option>
-              `).join('')}
-          </datalist>
-          <input type="hidden" name="item_id">
-        </div>
-        <div style="flex: 1;">
-          <input type="number" name="amount" step="0.01" required class="form-control" placeholder="Amount">
-        </div>
-        <div>
-          <button type="submit" class="button">Add Item</button>
-        </div>
-      </div>
-    </form>
-
-    <script>
-      // Update hidden item_id based on selected item_name
-      document.querySelector('input[name="item_name"]').addEventListener('input', function() {
-        const datalist = document.getElementById('items-list');
-        const option = Array.from(datalist.options).find(opt => opt.value === this.value);
-        document.querySelector('input[name="item_id"]').value = option ? option.dataset.id : '';
-      });
-    </script>
-  `;
-};
-
-// Single receipt view/edit
 const get = async (c, db) => {
   const receiptId = parseInt(c.req.param('id'));
   
@@ -209,8 +162,6 @@ const get = async (c, db) => {
           </tr>
         </tfoot>
       </table>
-
-      ${addItem(availableItems)}
 
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
       <script>
