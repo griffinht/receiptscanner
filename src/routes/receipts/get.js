@@ -1,6 +1,47 @@
 const { sortItemsByOrder } = require('./util/ItemOrders');
 const { get: itemsGet } = require('./items/items')
 
+// Add this new function above the get function
+const addItem = (availableItems) => {
+  return `
+    <form method="POST" action="items" style="margin-top: 20px;">
+      <div style="display: flex; gap: 10px; align-items: flex-end;">
+        <div style="flex: 2;">
+          <select name="item_id" class="form-control" required>
+            <option value="">Select an item...</option>
+            ${availableItems
+              .sort((a, b) => {
+                if (a.category_name !== b.category_name) {
+                  return a.category_name.localeCompare(b.category_name);
+                }
+                return a.item_name.localeCompare(b.item_name);
+              })
+              .map(item => `
+                <option value="${item.id}">
+                  ${item.item_name} - ${item.category_name}
+                </option>
+              `).join('')}
+            <option value="new">+ Add new item...</option>
+          </select>
+        </div>
+        <div style="flex: 1;">
+          <input type="number" name="amount" step="0.01" required class="form-control" placeholder="Amount">
+        </div>
+        <div>
+          <button type="submit" class="button">Add Item</button>
+        </div>
+      </div>
+
+      <div id="newItemInput" style="display: none; margin-top: 10px;">
+        <input type="text" 
+               name="new_item_name" 
+               class="form-control" 
+               placeholder="Enter new item name">
+      </div>
+    </form>
+  `;
+};
+
 // Single receipt view/edit
 const get = async (c, db) => {
   const receiptId = parseInt(c.req.param('id'));
@@ -164,24 +205,7 @@ const get = async (c, db) => {
         </tfoot>
       </table>
 
-      <form method="POST" action="/receipts/${receiptId}/items" style="margin-top: 20px;">
-        <div style="display: flex; gap: 10px; align-items: flex-end;">
-          <div style="flex: 2;">
-            <select name="item_id" required class="form-control">
-              <option value="">Select an item...</option>
-              ${availableItems.map(item => `
-                <option value="${item.id}">${item.category_name} - ${item.item_name}</option>
-              `).join('')}
-            </select>
-          </div>
-          <div style="flex: 1;">
-            <input type="number" name="amount" step="0.01" required class="form-control" placeholder="Amount">
-          </div>
-          <div>
-            <button type="submit" class="button">Add Item</button>
-          </div>
-        </div>
-      </form>
+      ${addItem(availableItems)}
 
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
       <script>
@@ -239,6 +263,19 @@ const get = async (c, db) => {
                 }
               }
             }
+          }
+        });
+
+        const itemSelect = document.querySelector('select[name="item_id"]');
+        const newItemInput = document.getElementById('newItemInput');
+
+        itemSelect.addEventListener('change', function() {
+          if (this.value === 'new') {
+            newItemInput.style.display = 'block';
+            newItemInput.querySelector('input').required = true;
+          } else {
+            newItemInput.style.display = 'none';
+            newItemInput.querySelector('input').required = false;
           }
         });
       </script>
