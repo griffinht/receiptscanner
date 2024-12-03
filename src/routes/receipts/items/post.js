@@ -57,7 +57,8 @@ const addItem = async (db) => {
                            placeholder="Enter item name or select from dropdown" 
                            list="items-list" 
                            required
-                           autocomplete="off">
+                           autocomplete="off"
+                           autofocus>
                     <datalist id="items-list">
                         ${availableItems.map(item => `
                             <option data-id="${item.id}" 
