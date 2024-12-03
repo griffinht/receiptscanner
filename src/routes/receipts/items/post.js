@@ -48,7 +48,7 @@ const addItem = async (db) => {
     `);
 
     return `
-        <form method="POST" action="items" style="margin-top: 20px;">
+        <form method="POST" action="items" style="margin-top: 20px;" autocomplete="off">
             <div style="display: flex; gap: 10px; align-items: flex-end;">
                 <div style="flex: 2;">
                     <input type="text" 
@@ -56,7 +56,8 @@ const addItem = async (db) => {
                            class="form-control" 
                            placeholder="Enter item name or select from dropdown" 
                            list="items-list" 
-                           required>
+                           required
+                           autocomplete="off">
                     <datalist id="items-list">
                         ${availableItems.map(item => `
                             <option data-id="${item.id}" 
@@ -67,7 +68,7 @@ const addItem = async (db) => {
                             </option>
                         `).join('')}
                     </datalist>
-                    <input type="hidden" name="item_id">
+                    <input type="hidden" name="item_id" autocomplete="off">
                 </div>
                 <div style="flex: 1;">
                     <input type="text"
@@ -75,16 +76,23 @@ const addItem = async (db) => {
                            class="form-control"
                            placeholder="Select category"
                            list="categories-list"
-                           required>
+                           required
+                           autocomplete="off">
                     <datalist id="categories-list">
                         ${categories.map(category => `
                             <option data-id="${category.id}" value="${category.name}">
                         `).join('')}
                     </datalist>
-                    <input type="hidden" name="category_id" required>
+                    <input type="hidden" name="category_id" required autocomplete="off">
                 </div>
                 <div style="flex: 1;">
-                    <input type="number" name="amount" step="0.01" required class="form-control" placeholder="Amount">
+                    <input type="number" 
+                           name="amount" 
+                           step="0.01" 
+                           required 
+                           class="form-control" 
+                           placeholder="Amount"
+                           autocomplete="off">
                 </div>
                 <div>
                     <button type="submit" class="button">Add Item</button>
